@@ -11,9 +11,22 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import auth from '@react-native-firebase/auth';
+import { useEffect } from 'react';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+
+   (useEffect(() => {
+    auth()
+      .signInAnonymously()
+      .then(() => {
+        console.log('✅ Firebase connected');
+      })
+      .catch(error => {
+        console.log('❌ Firebase error:', error.code, error.message);
+      });
+  }, []));
 
   return (
     <SafeAreaProvider>
