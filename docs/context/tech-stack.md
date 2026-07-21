@@ -4,6 +4,8 @@ This document outlines the standard technology stack utilized for the ServicePro
 
 ## Frontend
 - **Framework:** React Native
+- **State Management:** Zustand
+- **Server State & Data Fetching:** TanStack Query (React Query)
 
 ## Backend
 - **Framework:** Node.js with Express

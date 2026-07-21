@@ -22,7 +22,8 @@ This plan outlines the phased implementation of the ServiceProviderApp, a React 
   - `src/navigation/`, `src/services/`, `src/store/`
   - `src/components/common/`, `src/hooks/`, `src/types/`, `src/utils/`
 - Install and configure React Navigation (Stack + Bottom Tab) — see `frontend.md`
-- Install and configure Zustand for state management
+- Install and configure Zustand for client state management
+- Install and configure TanStack Query (React Query) for server state — `QueryClientProvider` in `App.tsx`
 - Setup `.env` file with Firebase, API base URL
 - Configure Firebase SDK (`src/services/firebase.ts`)
 - Configure Axios API client with base URL and JWT interceptor
@@ -525,7 +526,7 @@ Explicitly handled cases:
 
 | Phase | Area | Key Deliverables |
 |-------|------|------------------|
-| 1 | Setup | Project scaffold, DB connection, Firebase config |
+| 1 | Setup | Project scaffold, DB connection, Firebase config, Zustand + TanStack Query |
 | 2 | Auth | OTP login, JWT, profile completion |
 | 3 | Profile | User profile CRUD, address management, image upload |
 | 4 | Services | Categories, service catalog, search, filters |

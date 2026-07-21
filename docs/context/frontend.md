@@ -56,7 +56,7 @@ ServiceProviderApp/
 │   │   ├── BookingItem.tsx
 │   │   └── ClientCard.tsx
 │   │
-│   ├── hooks/                        # Custom React hooks
+│   ├── hooks/                        # Custom React hooks + TanStack Query hooks
 │   │   ├── useBookings.ts
 │   │   ├── useServices.ts
 │   │   └── useUserRole.ts
@@ -78,7 +78,7 @@ ServiceProviderApp/
 ├── ios/                              # iOS native project
 │   └── GoogleService-Info.plist
 │
-├── App.tsx                           # Application entry point
+├── App.tsx                           # Application entry point (QueryClientProvider + navigation)
 ├── index.js                          # React Native registration
 ├── package.json                      # NPM dependencies
 ├── .env                              # Environment variables
