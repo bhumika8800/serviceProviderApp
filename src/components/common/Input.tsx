@@ -1,0 +1,92 @@
+import { useState } from 'react';
+import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { colors, spacing, borderRadius, typography } from '../../utils/constants';
+
+interface InputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  keyboardType?: 'default' | 'phone-pad' | 'numeric' | 'email-address' | 'number-pad';
+  maxLength?: number;
+  error?: string;
+  label?: string;
+  autoFocus?: boolean;
+  editable?: boolean;
+}
+
+export function Input({
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType = 'default',
+  maxLength,
+  error,
+  label,
+  autoFocus = false,
+  editable = true,
+}: InputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <View style={styles.container}>
+      {label && <Text style={styles.label}>{label}</Text>}
+      <TextInput
+        style={[
+          styles.input,
+          isFocused && styles.focusedInput,
+          error && styles.errorInput,
+          !editable && styles.disabledInput,
+        ]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textTertiary}
+        keyboardType={keyboardType}
+        maxLength={maxLength}
+        autoFocus={autoFocus}
+        editable={editable}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+      />
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    gap: spacing.xs,
+  },
+  label: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  input: {
+    height: 48,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    ...typography.body,
+    color: colors.textPrimary,
+  },
+  focusedInput: {
+    borderColor: colors.primary,
+    borderWidth: 1.5,
+  },
+  errorInput: {
+    borderColor: colors.error,
+    backgroundColor: colors.errorBg,
+  },
+  disabledInput: {
+    backgroundColor: colors.background,
+    borderColor: colors.borderLight,
+    color: colors.textTertiary,
+  },
+  errorText: {
+    ...typography.caption,
+    color: colors.error,
+  },
+});

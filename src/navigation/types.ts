@@ -6,12 +6,15 @@ export type UserTabParamList = {
 };
 
 export type AuthStackParamList = {
+  Splash: undefined;
   Login: undefined;
-  Otp: undefined;
+  Otp: { phoneNumber: string };
 };
 
 export type RootStackParamList = {
-  Auth: undefined;
+  Splash: undefined;
+  Login: undefined;
+  Otp: { phoneNumber: string };
   UserTabs: undefined;
   AdminTabs: undefined;
   ServiceDetail: { serviceId: string };
