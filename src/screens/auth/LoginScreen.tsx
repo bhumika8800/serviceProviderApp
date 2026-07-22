@@ -5,7 +5,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,18 +13,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, typography } from '../../utils/constants';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
-import { sendOtp } from '../../services/authService';
+import { sendOtp, signInWithGoogle } from '../../services/authService';
 import { useAuthStore } from '../../store/useAuthStore';
+import apiClient from '../../services/apiClient';
 import type { RootStackParamList } from '../../navigation/types';
+import type { LoginResponse } from '../../types';
 
 type LoginNavProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 export function LoginScreen() {
   const navigation = useNavigation<LoginNavProp>();
+  const login = useAuthStore((state) => state.login);
   const setLoading = useAuthStore((state) => state.setLoading);
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const validatePhone = (text: string) => {
     const digits = text.replace(/[^0-9]/g, '');
@@ -51,6 +55,26 @@ export function LoginScreen() {
       setError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setIsSending(false);
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setLoading(true);
+
+    try {
+      const firebaseIdToken = await signInWithGoogle();
+      const { data } = await apiClient.post<LoginResponse>('/auth/verify', {
+        idToken: firebaseIdToken,
+      });
+      login(data.user, data.token);
+    } catch (err: any) {
+      if (err.message !== 'Google sign-in was cancelled.') {
+        Alert.alert('Google Sign-In Failed', err.message || 'An error occurred during Google sign-in.');
+      }
+    } finally {
+      setIsGoogleLoading(false);
       setLoading(false);
     }
   };
@@ -93,6 +117,19 @@ export function LoginScreen() {
             disabled={phone.length < 10}
           />
         </View>
+
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or continue with</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Button
+          title="Sign in with Google"
+          onPress={handleGoogleSignIn}
+          variant="outline"
+          loading={isGoogleLoading}
+        />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
@@ -155,6 +192,21 @@ const styles = StyleSheet.create({
   },
   phoneInput: {
     flex: 1,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.xl,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    marginHorizontal: spacing.md,
   },
   footer: {
     alignItems: 'center',
