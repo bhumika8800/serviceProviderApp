@@ -13,6 +13,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isGuest = useAuthStore((state) => state.isGuest);
+  const hasAccess = isAuthenticated || isGuest;
 
   return (
     <NavigationContainer>
@@ -24,7 +26,7 @@ export function AppNavigator() {
           headerShadowVisible: false,
         }}
       >
-        {isAuthenticated ? (
+        {hasAccess ? (
           <Stack.Group>
             <Stack.Screen
               name="UserTabs"

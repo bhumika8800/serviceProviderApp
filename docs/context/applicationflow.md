@@ -46,6 +46,27 @@ Booking Completed
 Query Submitted (status: open) -> Support Responds -> Linked to user_id (optional) -> Status: Closed
 ```
 
+## Guest Access Flow
+
+```
+User opens app -> Splash Screen -> Login Screen
+  -> User taps "Sign in as Guest"
+  -> useAuthStore.loginAsGuest() sets isGuest: true
+  -> AppNavigator detects hasAccess (isGuest = true)
+  -> Main app (UserTabs) rendered, auth screens hidden
+  -> Guest can browse Home, Services, Service Detail
+
+GUEST LIMITATIONS
+  -> Booking flow -> Prompt to log in
+  -> Profile tab -> Prompt to log in
+  -> Cart actions -> Prompt to log in
+
+ON AUTHENTICATION (guest upgrades to full user)
+  -> User logs in via OTP or Google
+  -> isGuest set to false, isAuthenticated set to true
+  -> Full app access granted
+```
+
 ## Create User Flow (Phone OTP via Firebase Auth)
 
 ```

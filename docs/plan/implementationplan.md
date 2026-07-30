@@ -57,7 +57,7 @@ This plan outlines the phased implementation of the ServiceProviderApp, a React 
 ### Frontend — Screens & Features
 Per `docs/context/frontend.md`:
 - **Splash Screen** — Company logo centered, Login/Get Started button
-- **Login Screen** (`screens/auth/LoginScreen.tsx`) — Phone number input, Generate OTP button, phone format validation
+- **Login Screen** (`screens/auth/LoginScreen.tsx`) — Phone number input, Generate OTP button, phone format validation, Sign in with Google, Sign in as Guest
 - **OTP Screen** (`screens/auth/OtpScreen.tsx`) — OTP input fields, Verify OTP button, resend timer, loading state
 - **Complete Profile Screen** — First name, last name, email, address fields (triggered when `profile_complete: false`)
 
@@ -71,7 +71,20 @@ User enters phone -> Firebase sends OTP -> User enters OTP
   -> User lands on home
 ```
 
-Store: `src/store/useAuthStore.ts` (Zustand) — manage auth state, token persistence, session restoration
+Per `docs/context/applicationflow.md` — Guest Access Flow:
+```
+Login Screen -> User taps "Sign in as Guest"
+  -> useAuthStore.loginAsGuest() sets isGuest: true
+  -> AppNavigator detects hasAccess (isGuest = true)
+  -> Main app (UserTabs) rendered
+  -> Guest can browse; booking/profile actions prompt login
+```
+
+Store: `src/store/useAuthStore.ts` (Zustand) — manage auth state, token persistence, session restoration, guest mode (`isGuest`, `loginAsGuest`)
+
+### AppNavigator Change
+- Auth gating changed from `isAuthenticated` to `isAuthenticated || isGuest`
+- Unauthenticated users without guest mode still see Splash/Login/OTP screens
 
 ### Backend — APIs
 | Method | Endpoint | Description |
@@ -94,6 +107,9 @@ Per `docs/context/backend.md` auth flow:
 - JWT authentication working (stored on device, sent as `Authorization: Bearer <token>`)
 - User profile completion flow implemented
 - Welcome notification on first signup
+- Guest mode — users can skip authentication and browse the app
+- "Sign in as Guest" CTA on Login Screen
+- Auth gating uses `isAuthenticated || isGuest` — no forced redirect to login
 
 ---
 

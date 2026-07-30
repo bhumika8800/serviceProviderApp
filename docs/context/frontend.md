@@ -101,13 +101,27 @@ ServiceProviderApp/
 - Generate OTP Button
 - OTP Input Field
 - Verify OTP Button
+- Sign in with Google Button
+- Sign in as Guest Button
 
 **Validation**
 - Phone number format validation
 - OTP verification status
 - Loading state during OTP generation/verification
 
+### Guest Access
+- Users can skip authentication via "Sign in as Guest" CTA on the Login Screen
+- Guest mode sets `isGuest: true` in `useAuthStore`, bypassing the auth gate in `AppNavigator`
+- Guest users can browse the app (Home, Services, Service Detail) but cannot book services
+- Guests are prompted to log in when attempting booking or profile actions
+- Logging in as a registered user clears guest state (`isGuest: false`)
+
 ## 3. Global Navigation
+
+### Auth Gating
+- The app does not force authentication. Unauthenticated and guest users can access the main app.
+- `AppNavigator` gates auth screens vs main app using `isAuthenticated || isGuest`.
+- Logged-in users have full access. Guest users have limited browsing access.
 
 ### Top Navigation Bar
 - **Left Section:** Brand Logo

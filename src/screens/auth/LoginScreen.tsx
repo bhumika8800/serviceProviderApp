@@ -59,6 +59,12 @@ export function LoginScreen() {
     }
   };
 
+  const loginAsGuest = useAuthStore((state) => state.loginAsGuest);
+
+  const handleGuestSignIn = () => {
+    loginAsGuest();
+  };
+
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     setLoading(true);
@@ -129,6 +135,12 @@ export function LoginScreen() {
           onPress={handleGoogleSignIn}
           variant="outline"
           loading={isGoogleLoading}
+        />
+
+        <Button
+          title="Sign in as Guest"
+          onPress={handleGuestSignIn}
+          variant="ghost"
         />
 
         <View style={styles.footer}>

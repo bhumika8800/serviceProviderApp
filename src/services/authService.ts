@@ -1,4 +1,5 @@
 import auth from '@react-native-firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 let confirmationResult: any = null;
 
@@ -52,8 +53,15 @@ export async function verifyOtp(otpCode: string): Promise<string> {
   }
 }
 
+GoogleSignin.configure({
+  webClientId: '187235081190-voqpb9cki83t6ni62hoco6693k8v4ipr.apps.googleusercontent.com',
+});
+
 export async function signInWithGoogle(): Promise<string> {
-  const userCredential = await auth().signInWithPopup(auth.GoogleAuthProvider);
+  await GoogleSignin.hasPlayServices();
+  const googleUser = await GoogleSignin.signIn();
+  const googleCredential = auth.GoogleAuthProvider.credential(googleUser.idToken);
+  const userCredential = await auth().signInWithCredential(googleCredential);
   const firebaseIdToken = await userCredential.user.getIdToken();
   return firebaseIdToken;
 }

@@ -101,7 +101,8 @@ ServiceProviderApp follows a **client-server architecture** with a React Native 
 │                                                                       │
 │  ┌──────────────────────────────────────────────────────────────────┐ │
 │  │  State (src/store/) — Zustand                                    │ │
-│  │  useAuthStore: token, user, isAuthenticated, login/logout       │ │
+│  │  useAuthStore: token, user, isAuthenticated, isGuest,           │  │
+│  │  login, loginAsGuest, logout                                     │  │
 │  │  useBookingStore: bookings, filters, pagination                  │ │
 │  └──────────────────────────────────────────────────────────────────┘ │
 │                                                                       │
@@ -130,10 +131,11 @@ ServiceProviderApp follows a **client-server architecture** with a React Native 
 
 **Key Design Decisions:**
 - **TypeScript** throughout for type safety
-- **Zustand** over Redux for lightweight global state (auth tokens, booking filters)
+- **Zustand** over Redux for lightweight global state (auth tokens, booking filters, guest mode)
 - **TanStack Query** for server state — caching, auto-refetch, loading/error states for API calls
 - **Axios** with request/response interceptors for JWT attachment and error normalization
-- **React Navigation** with role-based routing (user vs admin tab navigators)
+- **React Navigation** with role-based routing (user vs admin tab navigators) and guest gating
+- **Guest mode** — unauthenticated users can browse the app; `AppNavigator` gates on `isAuthenticated || isGuest`
 - Component-driven UI with a shared common component library
 
 ---

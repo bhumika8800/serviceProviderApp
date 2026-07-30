@@ -320,6 +320,8 @@ All routes are prefixed with `/api/v1`. Protected routes require `Authorization:
 | GET    | /queries                   | List queries (admin)                 |
 | PATCH  | /queries/:id/close         | Mark resolved/closed (admin)         |
 
+**Guest Support:** The frontend supports guest (unauthenticated) browsing. Guests can submit queries via `POST /queries` (user_id is nullable). Guests are prompted to log in for booking, cart, or profile actions.
+
 ## Business Flows
 
 - **Booking creation:** Browse Services → Add to Cart → Create Booking → status: pending
