@@ -151,10 +151,14 @@ Per `docs/context/frontend.md`:
 
 ### Frontend — Screens
 Per `docs/context/frontend.md`:
-- **Home Screen** (`screens/user/HomeScreen.tsx`)
+- **Home Screen** (`screens/user/HomeScreen.tsx`) — ✅ **Done**
   - Sections: Featured Services, How It Works (4 steps), Why Choose Us, Need Help?
   - Service cards, promotional banners, popular services
-- **Services Screen** — Search bar, category filters (Home Cleaning, Plumbing, Electrical, Beauty & Wellness, Appliance Repair, Painting), service grid/list/card
+- **Services Screen** (`screens/user/ServicesScreen.tsx`) — ✅ **Done** (with mock data)
+  - Search bar with client-side filtering by name/description/tags
+  - Category filter chips (6 categories) with toggle selection
+  - 2-column card grid with service images from Unsplash
+  - Loading skeletons, empty states, navigation to ServiceDetail
 - **Service Detail Screen** (`screens/user/ServiceDetailScreen.tsx`)
   - Display: name, description, pricing, duration, ratings & reviews, available time slots
   - Actions: Add to Cart, Book Now
@@ -220,10 +224,14 @@ Per `docs/context/frontend.md`:
 ### Frontend — Screens
 Per `docs/context/frontend.md`:
 - **Booking Screen** (`screens/user/BookingScreen.tsx`) — select address, select date & time, booking confirmation
-- **My Bookings Screen** (`screens/user/MyBookingsScreen.tsx`)
-  - Active Bookings: service name, booking ID, date & time, status (Scheduled/In Progress/Completed/Cancelled)
-  - Booking History: completed & cancelled services with repeat booking option
-  - Floating Action Button for quick booking
+- **My Bookings Screen** (`screens/user/MyBookingsScreen.tsx`) — ✅ **Done** (with mock data)
+  - Active/History tab switcher with pill toggle
+  - Active Bookings: service icon, name, booking ID, date & time, StatusBadge (color-coded), amount, cancel button
+  - Booking History: completed & cancelled bookings (no cancel option)
+  - Cancel with confirmation alert → optimistic local state update
+  - Loading skeleton cards, tab-aware empty states
+  - Floating Action Button (+) navigates to Services tab
+- **BookingItem** (`components/BookingItem.tsx`) — ✅ **Built** reusable card component with StatusBadge integration
 
 ### Backend — APIs
 | Method | Endpoint | Description |
@@ -545,9 +553,9 @@ Explicitly handled cases:
 | 1 | Setup | Project scaffold, DB connection, Firebase config, Zustand + TanStack Query |
 | 2 | Auth | OTP login, JWT, profile completion |
 | 3 | Profile | User profile CRUD, address management, image upload |
-| 4 | Services | Categories, service catalog, search, filters |
+| 4 | Services | Categories, service catalog, search, filters | 🟡 Services screen done (mock data), Home screen done, ServiceDetail placeholder |
 | 5 | Cart | Add/remove/update cart, price summary |
-| 6 | Bookings | Booking creation, lifecycle, history |
+| 6 | Bookings | Booking creation, lifecycle, history | 🟡 My Bookings screen done (mock data), Booking screen placeholder, BookingItem done |
 | 7 | Payments | Razorpay integration, verification, webhooks |
 | 8 | Notifications | FCM push, notification history, read/unread |
 | 9 | Reviews | Ratings, reviews, avg_rating caching |

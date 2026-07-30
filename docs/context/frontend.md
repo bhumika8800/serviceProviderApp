@@ -12,11 +12,12 @@ ServiceProviderApp/
 │   │   │   └── OtpScreen.tsx
 │   │   │
 │   │   ├── user/                     # Customer-facing screens
-│   │   │   ├── HomeScreen.tsx
-│   │   │   ├── BookingScreen.tsx
-│   │   │   ├── MyBookingsScreen.tsx
-│   │   │   ├── ProfileScreen.tsx
-│   │   │   └── ServiceDetailScreen.tsx
+│   │   │   ├── HomeScreen.tsx        # ✅ Full — featured services, steps, benefits, help
+│   │   │   ├── ServicesScreen.tsx    # ✅ Full — search, category filters, 2-col card grid, mock data
+│   │   │   ├── ServiceDetailScreen.tsx # ⬜ Placeholder
+│   │   │   ├── BookingScreen.tsx     # ⬜ Placeholder
+│   │   │   ├── MyBookingsScreen.tsx  # ✅ Full — Active/History tabs, cancel, FAB, mock data
+│   │   │   └── ProfileScreen.tsx     # ⬜ Placeholder
 │   │   │
 │   │   └── admin/                    # Company admin screens
 │   │       ├── AdminDashboardScreen.tsx
@@ -24,6 +25,10 @@ ServiceProviderApp/
 │   │       ├── AdminClientsScreen.tsx
 │   │       ├── AdminServicesScreen.tsx
 │   │       └── ClientDetailScreen.tsx
+│   │
+│   ├── data/                         # Mock data (offline/dev mode)
+│   │   ├── mockServices.ts           # 18 services across 6 categories with Unsplash images
+│   │   └── mockBookings.ts           # 6 bookings across all statuses
 │   │
 │   ├── navigation/                   # Navigation configuration
 │   │   ├── AppNavigator.tsx
@@ -52,9 +57,8 @@ ServiceProviderApp/
 │   │   │   ├── EmptyState.tsx
 │   │   │   └── StatusBadge.tsx
 │   │   │
-│   │   ├── ServiceCard.tsx
-│   │   ├── BookingItem.tsx
-│   │   └── ClientCard.tsx
+│   │   ├── ServiceCard.tsx           # ✅ Updated — Image support, optional style prop
+│   │   └── BookingItem.tsx           # ✅ Built — service icon, status badge, date, cancel
 │   │
 │   ├── hooks/                        # Custom React hooks + TanStack Query hooks
 │   │   ├── useBookings.ts
@@ -156,21 +160,25 @@ ServiceProviderApp/
   - Customer Care Information
 
 ## 5. Services
-- **Primary Services** — Display major service categories such as:
-  - Home Cleaning
-  - Plumbing
-  - Electrical
-  - Beauty & Wellness
-  - Appliance Repair
-  - Painting
+- **Screen:** `src/screens/user/ServicesScreen.tsx` — ✅ **Implemented** with mock data (`src/data/mockServices.ts`)
+- **Primary Services** — 6 categories with 18 services total:
+  - Home Cleaning (3 services: Basic, Deep, Kitchen Deep)
+  - Plumbing (3 services: Tap Repair, Drain Cleaning, Water Heater)
+  - Electrical (3 services: Switch/Socket, Fan, Wiring)
+  - Beauty & Wellness (3 services: Facial, Haircut, Manicure)
+  - Appliance Repair (3 services: AC, Washing Machine, Refrigerator)
+  - Painting (3 services: Interior, Exterior, Texture/Wallpaper)
 
 ### All Services
-- Search Bar
-- Category Filters
-- Service Grid/List/Card
+- **Search Bar** — filters client-side by name, description, and tags with clear button
+- **Category Filters** — horizontal scrollable pill chips, tap to filter by category, "All" to reset
+- **Service Grid** — 2-column card layout using `ServiceCard` with `default` variant
+- **Service Images** — each service shows a category-relevant Unsplash photo (e.g., cleaning tools for cleaning services)
+- **Loading State** — skeleton cards matching the card layout
+- **Empty State** — contextual message for "no results" vs "no services", with clear search action
 
 ### Service Details Page
-When a service is selected:
+When a service is selected (navigates to `ServiceDetail`):
 - **Display:** Service Name, Description, Pricing, Service Duration, Ratings & Reviews, Available Time Slots
 - **Actions:** Add to Cart, Book Now
 
@@ -186,18 +194,33 @@ Each sub-service should display:
 - Book Button
 
 ## 6. Bookings
+- **Screen:** `src/screens/user/MyBookingsScreen.tsx` — ✅ **Implemented** with mock data (`src/data/mockBookings.ts`)
+- **Component:** `src/components/BookingItem.tsx` — ✅ **Built** reusable card
+
+### Layout
+- **Header** — "My Bookings" title
+- **Tab Switcher** — "Active" / "History" pill toggle with selected state styling
+- **FlatList** — vertical list of `BookingItem` cards filtered by active tab
 
 ### Active Bookings
-- **Display:** Service Name, Booking ID, Date & Time, Status
-- **Statuses:** Scheduled, In Progress, Completed, Cancelled
+- **Display:** Service icon, Service Name, StatusBadge (color-coded), Booking ID, Date & Time, Amount
+- **Statuses:** Pending (warning), Confirmed (primary), In Progress (warning), Completed (success), Cancelled (error)
+- **Cancel Action** — confirmation alert → optimistically marks booking as cancelled (for pending/confirmed only)
 
 ### Booking History
-- Completed Services
-- Cancelled Services
-- Repeat Booking Option
+- Completed and cancelled bookings listed chronologically
+- Each card shows the same detail as active, without cancel option
+
+### Empty States
+- **Active tab:** "No active bookings" + "Book a service to get started" message
+- **History tab:** "No booking history" + contextual message
 
 ### Quick Action
-- Book a Service Button (Floating Action Button Recommended)
+- **Floating Action Button** (+) — bottom-right, navigates to Services tab for quick booking
+
+### States
+- **Loading** — 3 skeleton cards with icon + text placeholders
+- **Error** — cancel failure shown via Alert dialog
 
 ## 7. Profile
 
@@ -224,9 +247,9 @@ Each sub-service should display:
 - Global Search Across Services
 
 ## Loading & Empty States
-- Skeleton Loaders
-- No Bookings Found
-- No Services Available
+- **Skeleton Loaders** — card-shaped placeholders (used in Home, Services, Bookings)
+- **No Services Available** — empty state on Services screen with search/filter guidance
+- **No Bookings Found** — tab-aware empty states on My Bookings screen (active vs history)
 
 ## Error Handling
 - Network Error Screens
