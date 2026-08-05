@@ -12,6 +12,7 @@ interface InputProps {
   label?: string;
   autoFocus?: boolean;
   editable?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
 }
 
 export function Input({
@@ -24,6 +25,7 @@ export function Input({
   label,
   autoFocus = false,
   editable = true,
+  autoCapitalize,
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -45,6 +47,7 @@ export function Input({
         maxLength={maxLength}
         autoFocus={autoFocus}
         editable={editable}
+        autoCapitalize={autoCapitalize}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
       />

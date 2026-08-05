@@ -9,7 +9,7 @@ import { colors, spacing, borderRadius, typography, shadows } from '../../utils/
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'outline' | 'ghost' | 'danger';
   loading?: boolean;
   disabled?: boolean;
 }
@@ -22,6 +22,12 @@ export function Button({
   disabled = false,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const isLoadingColor =
+    variant === 'primary'
+      ? colors.textWhite
+      : variant === 'danger'
+        ? colors.error
+        : colors.primary;
 
   return (
     <TouchableOpacity
@@ -30,6 +36,7 @@ export function Button({
         variant === 'primary' && styles.primary,
         variant === 'outline' && styles.outline,
         variant === 'ghost' && styles.ghost,
+        variant === 'danger' && styles.danger,
         isDisabled && styles.disabled,
       ]}
       onPress={onPress}
@@ -37,10 +44,7 @@ export function Button({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? colors.textWhite : colors.primary}
-          size="small"
-        />
+        <ActivityIndicator color={isLoadingColor} size="small" />
       ) : (
         <Text
           style={[
@@ -48,6 +52,7 @@ export function Button({
             variant === 'primary' && styles.primaryText,
             variant === 'outline' && styles.outlineText,
             variant === 'ghost' && styles.ghostText,
+            variant === 'danger' && styles.dangerText,
             isDisabled && styles.disabledText,
           ]}
         >
@@ -78,6 +83,11 @@ const styles = StyleSheet.create({
   ghost: {
     backgroundColor: 'transparent',
   },
+  danger: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.error,
+  },
   disabled: {
     backgroundColor: colors.border,
     ...shadows.sm,
@@ -93,6 +103,9 @@ const styles = StyleSheet.create({
   },
   ghostText: {
     color: colors.primary,
+  },
+  dangerText: {
+    color: colors.error,
   },
   disabledText: {
     color: colors.textTertiary,

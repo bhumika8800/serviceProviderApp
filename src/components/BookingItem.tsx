@@ -10,7 +10,7 @@ interface BookingItemProps {
   onPress?: (id: string) => void;
 }
 
-const serviceIcon: Record<string, string> = {
+export const serviceIconMap: Record<string, string> = {
   'Basic Home Cleaning': '🧹',
   'Deep Cleaning': '🧹',
   'Kitchen Deep Cleaning': '🧹',
@@ -44,7 +44,7 @@ function formatDate(dateString: string): string {
 }
 
 export function BookingItem({ booking, showCancel, onCancel, onPress }: BookingItemProps) {
-  const icon = serviceIcon[booking.serviceSnapshot.name] || '📋';
+  const icon = serviceIconMap[booking.serviceSnapshot.name] || '📋';
 
   return (
     <TouchableOpacity

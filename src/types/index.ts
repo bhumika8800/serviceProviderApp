@@ -9,10 +9,23 @@ export interface User {
   lastName?: string;
   email?: string;
   avatar?: string;
+  addresses?: Address[];
   isActive: boolean;
   profileComplete: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Address {
+  id: string;
+  label: 'home' | 'work' | 'other';
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  isDefault: boolean;
 }
 
 export interface AuthState {
