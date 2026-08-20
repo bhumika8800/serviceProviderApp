@@ -59,8 +59,11 @@ GoogleSignin.configure({
 
 export async function signInWithGoogle(): Promise<string> {
   await GoogleSignin.hasPlayServices();
-  const googleUser = await GoogleSignin.signIn();
-  const googleCredential = auth.GoogleAuthProvider.credential(googleUser.idToken);
+  const response = await GoogleSignin.signIn();
+  if (response.type !== 'success' || !response.data.idToken) {
+    throw new Error('Google sign-in failed. Please try again.');
+  }
+  const googleCredential = auth.GoogleAuthProvider.credential(response.data.idToken);
   const userCredential = await auth().signInWithCredential(googleCredential);
   const firebaseIdToken = await userCredential.user.getIdToken();
   return firebaseIdToken;

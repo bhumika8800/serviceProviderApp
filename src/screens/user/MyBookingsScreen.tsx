@@ -12,9 +12,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { BookingItem } from '../../components/BookingItem';
-import { mockBookings } from '../../data/mockBookings';
+import { useBookings, useCancelBooking } from '../../hooks/useBookings';
 import type { UserTabParamList } from '../../navigation/types';
-import type { Booking } from '../../types';
+import type { Booking, PaginatedResponse } from '../../types';
 
 type BookingsNavProp = BottomTabNavigationProp<UserTabParamList>;
 
@@ -26,36 +26,41 @@ const historyStatuses: Booking['status'][] = ['completed', 'cancelled'];
 export function MyBookingsScreen() {
   const navigation = useNavigation<BookingsNavProp>();
   const [activeTab, setActiveTab] = useState<TabKey>('active');
-  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
-  const [isLoading] = useState(false);
+
+  const { data, isLoading } = useBookings();
+  const cancelBooking = useCancelBooking();
 
   const filteredBookings = useMemo(() => {
+    const bookings = (data as PaginatedResponse<Booking> | undefined)?.data ?? [];
     if (activeTab === 'active') {
       return bookings.filter((b) => activeStatuses.includes(b.status));
     }
     return bookings.filter((b) => historyStatuses.includes(b.status));
-  }, [bookings, activeTab]);
+  }, [data, activeTab]);
 
-  const handleCancel = useCallback((id: string) => {
-    Alert.alert(
-      'Cancel Booking',
-      'Are you sure you want to cancel this booking?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: () => {
-            setBookings((prev) =>
-              prev.map((b) =>
-                b.id === id ? { ...b, status: 'cancelled' as const, isActive: false } : b,
-              ),
-            );
+  const handleCancel = useCallback(
+    (id: string) => {
+      Alert.alert(
+        'Cancel Booking',
+        'Are you sure you want to cancel this booking?',
+        [
+          { text: 'No', style: 'cancel' },
+          {
+            text: 'Yes, Cancel',
+            style: 'destructive',
+            onPress: () => {
+              cancelBooking.mutate(id, {
+                onError: (error: { message?: string }) => {
+                  Alert.alert('Cancel Failed', error?.message || 'Something went wrong.');
+                },
+              });
+            },
           },
-        },
-      ],
-    );
-  }, []);
+        ],
+      );
+    },
+    [cancelBooking],
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: Booking }) => (

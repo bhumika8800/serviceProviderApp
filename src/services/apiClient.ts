@@ -1,10 +1,9 @@
 import axios, { AxiosError } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
-
-const BASE_URL = 'http://localhost:3000/api/v1';
+import { API_BASE_URL } from '../config/env';
 
 const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

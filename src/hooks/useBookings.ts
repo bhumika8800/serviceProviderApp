@@ -1,40 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import apiClient from '../services/apiClient';
-import type { Booking, ApiResponse, PaginatedResponse } from '../types';
+import {
+  createBooking,
+  listBookings,
+  getBooking,
+  cancelBooking,
+  type CreateBookingInput,
+} from '../services/bookingService';
 
 export function useBookings(status?: string) {
   return useQuery({
     queryKey: ['bookings', status],
-    queryFn: () =>
-      apiClient.get<
-        ApiResponse<Booking[]> | PaginatedResponse<Booking>
-      >('/bookings', {
-        params: status ? { status } : undefined,
-      }),
+    queryFn: () => listBookings(status),
   });
 }
 
 export function useBooking(id: string) {
   return useQuery({
     queryKey: ['booking', id],
-    queryFn: () =>
-      apiClient.get<ApiResponse<Booking>>(`/bookings/${id}`),
+    queryFn: () => getBooking(id),
     enabled: !!id,
   });
-}
-
-interface CreateBookingInput {
-  serviceId: string;
-  addressId: string;
-  bookingDate: string;
 }
 
 export function useCreateBooking() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateBookingInput) =>
-      apiClient.post<ApiResponse<Booking>>('/bookings', data),
+    mutationFn: (data: CreateBookingInput) => createBooking(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
     },
@@ -45,8 +37,7 @@ export function useCancelBooking() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.patch<ApiResponse<Booking>>(`/bookings/${id}/cancel`),
+    mutationFn: (id: string) => cancelBooking(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
     },

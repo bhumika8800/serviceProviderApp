@@ -1,12 +1,15 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { useAuthStore } from '../../store/useAuthStore';
-import { mockUser, mockAddresses } from '../../data/mockUser';
-import { mockBookings } from '../../data/mockBookings';
+import { useUserProfile, useUpdateProfile, useAddAddress, useUpdateAddress, useDeleteAddress } from '../../hooks/useUserProfile';
+import { useBookings } from '../../hooks/useBookings';
+import { Loader } from '../../components/common/Loader';
 import { EmptyState } from '../../components/common/EmptyState';
 import { MenuItem } from '../../components/common/MenuItem';
 import { Button } from '../../components/common/Button';
@@ -15,10 +18,13 @@ import { EditProfileModal } from '../../components/EditProfileModal';
 import { AvatarPickerModal } from '../../components/AvatarPickerModal';
 import { AddressManagerModal } from '../../components/AddressManagerModal';
 import { PastServiceCard } from '../../components/PastServiceCard';
-import type { UserTabParamList } from '../../navigation/types';
-import type { Address } from '../../types';
+import type { UserTabParamList, RootStackParamList } from '../../navigation/types';
+import type { ApiResponse, Address, Booking, PaginatedResponse, User } from '../../types';
 
-type ProfileNavProp = BottomTabNavigationProp<UserTabParamList>;
+type ProfileNavProp = CompositeNavigationProp<
+  BottomTabNavigationProp<UserTabParamList>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 const supportOptions = [
   { icon: '🛟', label: 'Help Centre', description: 'Guides and troubleshooting' },
@@ -29,65 +35,95 @@ const supportOptions = [
 
 export function ProfileScreen() {
   const navigation = useNavigation<ProfileNavProp>();
-  const user = useAuthStore((s) => s.user) ?? mockUser;
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const storeUser = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const logout = useAuthStore((s) => s.logout);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const [addresses, setAddresses] = useState<Address[]>(mockAddresses);
+  const { data, isLoading } = useUserProfile();
+  const { data: bookingsData } = useBookings();
+  const updateProfile = useUpdateProfile();
+  const addAddress = useAddAddress();
+  const updateAddress = useUpdateAddress();
+  const deleteAddress = useDeleteAddress();
+
+  const apiUser = (data as ApiResponse<{ user: User }> | undefined)?.data?.user;
+  const user: User | null = apiUser ?? storeUser;
+  const addresses: Address[] = user?.addresses ?? [];
+
+  useEffect(() => {
+    if (apiUser && apiUser.id !== storeUser?.id) {
+      setUser(apiUser);
+    }
+  }, [apiUser, storeUser?.id, setUser]);
+
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showAddressManager, setShowAddressManager] = useState(false);
 
-  const pastServices = useMemo(
-    () => mockBookings.filter((b) => b.status === 'completed'),
-    [],
-  );
+  const bookings = (bookingsData as PaginatedResponse<Booking> | undefined)?.data ?? [];
+  const pastServices = bookings.filter((b) => b.status === 'completed');
 
   const comingSoon = useCallback((feature: string) => {
     Alert.alert(feature, 'This feature will be available soon.');
   }, []);
 
   const handleSaveProfile = useCallback(
-    (data: { firstName: string; lastName: string; email?: string }) => {
-      setUser({
-        ...user,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
+    (profile: { firstName: string; lastName: string; email?: string }) => {
+      updateProfile.mutate(profile, {
+        onSuccess: (res) => {
+          const updated = (res as unknown as ApiResponse<{ user: User }>).data?.user;
+          if (updated) setUser(updated);
+          setShowEditProfile(false);
+        },
+        onError: (error: { message?: string }) => {
+          Alert.alert('Update Failed', error?.message || 'Something went wrong.');
+        },
       });
-      setShowEditProfile(false);
     },
-    [user, setUser],
+    [updateProfile, setUser],
   );
 
   const handleSelectAvatar = useCallback(
     (uri: string) => {
-      setUser({ ...user, avatar: uri || undefined });
-      setShowAvatarPicker(false);
+      updateProfile.mutate(
+        { avatar: uri || undefined },
+        {
+          onSuccess: (res) => {
+            const updated = (res as unknown as ApiResponse<{ user: User }>).data?.user;
+            if (updated) setUser(updated);
+            setShowAvatarPicker(false);
+          },
+          onError: (error: { message?: string }) => {
+            Alert.alert('Update Failed', error?.message || 'Something went wrong.');
+          },
+        },
+      );
     },
-    [user, setUser],
+    [updateProfile, setUser],
   );
 
-  const handleAddAddress = useCallback((address: Omit<Address, 'id'>) => {
-    setAddresses((prev) => {
-      const list = address.isDefault ? prev.map((a) => ({ ...a, isDefault: false })) : prev;
-      return [...list, { ...address, id: `addr-${Date.now()}` }];
-    });
-  }, []);
+  const handleAddAddress = useCallback(
+    (address: Omit<Address, 'id'>) => {
+      addAddress.mutate(address);
+    },
+    [addAddress],
+  );
 
-  const handleUpdateAddress = useCallback((updated: Address) => {
-    setAddresses((prev) => {
-      const list = prev.map((a) => (a.id === updated.id ? updated : a));
-      return updated.isDefault
-        ? list.map((a) => (a.id === updated.id ? a : { ...a, isDefault: false }))
-        : list;
-    });
-  }, []);
+  const handleUpdateAddress = useCallback(
+    (updated: Address) => {
+      const { id, ...rest } = updated;
+      updateAddress.mutate({ addressId: id, data: rest });
+    },
+    [updateAddress],
+  );
 
-  const handleDeleteAddress = useCallback((id: string) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
-  }, []);
+  const handleDeleteAddress = useCallback(
+    (id: string) => {
+      deleteAddress.mutate(id);
+    },
+    [deleteAddress],
+  );
 
   const handleLogout = useCallback(() => {
     Alert.alert('Logout', 'Are you sure you want to log out?', [
@@ -106,12 +142,14 @@ export function ProfileScreen() {
           <EmptyState
             title="Sign in to view your profile"
             message="Log in to manage your personal information, saved addresses, and past services."
-            actionLabel="Sign In"
-            onAction={logout}
           />
         </View>
       </SafeAreaView>
     );
+  }
+
+  if (isLoading && !user) {
+    return <Loader fullScreen message="Loading profile…" />;
   }
 
   return (
@@ -126,7 +164,7 @@ export function ProfileScreen() {
         </View>
 
         <ProfileInfoCard
-          user={user}
+          user={user!}
           addresses={addresses}
           onEditProfile={() => setShowEditProfile(true)}
           onManageAddresses={() => setShowAddressManager(true)}
@@ -186,7 +224,7 @@ export function ProfileScreen() {
               icon="🔔"
               label="Notification Inbox"
               description="Manage your alerts"
-              onPress={() => comingSoon('Notification Inbox')}
+              onPress={() => navigation.navigate('Notifications')}
             />
             <MenuItem
               icon="📍"
@@ -217,9 +255,9 @@ export function ProfileScreen() {
       <EditProfileModal
         visible={showEditProfile}
         initial={{
-          firstName: user.firstName ?? '',
-          lastName: user.lastName ?? '',
-          email: user.email ?? '',
+          firstName: user?.firstName ?? '',
+          lastName: user?.lastName ?? '',
+          email: user?.email ?? '',
         }}
         onClose={() => setShowEditProfile(false)}
         onSave={handleSaveProfile}
@@ -227,7 +265,7 @@ export function ProfileScreen() {
 
       <AvatarPickerModal
         visible={showAvatarPicker}
-        currentAvatar={user.avatar}
+        currentAvatar={user?.avatar}
         onClose={() => setShowAvatarPicker(false)}
         onSelect={handleSelectAvatar}
       />

@@ -6,11 +6,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, typography } from '../../utils/constants';
+import { colors, spacing, typography } from '../../utils/constants';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { verifyOtp, sendOtp, clearConfirmationResult } from '../../services/authService';
@@ -20,13 +19,11 @@ import type { RootStackParamList } from '../../navigation/types';
 import type { LoginResponse } from '../../types';
 
 type OtpRouteProp = RouteProp<RootStackParamList, 'Otp'>;
-type OtpNavProp = NativeStackNavigationProp<RootStackParamList, 'Otp'>;
 
 const RESEND_COOLDOWN = 30;
 
 export function OtpScreen() {
   const route = useRoute<OtpRouteProp>();
-  const navigation = useNavigation<OtpNavProp>();
   const { phoneNumber } = route.params;
   const login = useAuthStore((state) => state.login);
   const setLoading = useAuthStore((state) => state.setLoading);

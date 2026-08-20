@@ -13,8 +13,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { ServiceCard } from '../../components/ServiceCard';
-import { mockServices, mockCategories } from '../../data/mockServices';
+import { useCategories, useServices } from '../../hooks/useServices';
 import type { RootStackParamList } from '../../navigation/types';
+import type { ApiResponse, Category, Service } from '../../types';
 
 type ServicesNavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,22 +29,28 @@ export function ServicesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+  const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  const { data: servicesData, isLoading: servicesLoading } = useServices(
+    selectedCategory ?? undefined,
+  );
+
+  const categories: Category[] = (categoriesData as ApiResponse<Category[]> | undefined)
+    ?.data ?? [];
+
   const services = useMemo(() => {
-    let filtered = mockServices;
-    if (selectedCategory) {
-      filtered = filtered.filter((s) => s.categoryId === selectedCategory);
-    }
+    const fetchedServices: Service[] = (servicesData as ApiResponse<Service[]> | undefined)
+      ?.data ?? [];
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(
+      return fetchedServices.filter(
         (s) =>
           s.name.toLowerCase().includes(q) ||
           s.description.toLowerCase().includes(q) ||
           s.tags.some((t) => t.toLowerCase().includes(q)),
       );
     }
-    return filtered;
-  }, [selectedCategory, searchQuery]);
+    return fetchedServices;
+  }, [searchQuery, servicesData]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -94,29 +101,35 @@ export function ServicesScreen() {
                 All
               </Text>
             </TouchableOpacity>
-            {mockCategories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryChip,
-                  selectedCategory === category.id && styles.categoryChipActive,
-                ]}
-                onPress={() =>
-                  setSelectedCategory(
-                    selectedCategory === category.id ? null : category.id,
-                  )
-                }
-              >
-                <Text
+            {categoriesLoading ? (
+              <View style={styles.loadingChips}>
+                <Text style={styles.categoryChipText}>Loading…</Text>
+              </View>
+            ) : (
+              categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
                   style={[
-                    styles.categoryChipText,
-                    selectedCategory === category.id && styles.categoryChipTextActive,
+                    styles.categoryChip,
+                    selectedCategory === category.id && styles.categoryChipActive,
                   ]}
+                  onPress={() =>
+                    setSelectedCategory(
+                      selectedCategory === category.id ? null : category.id,
+                    )
+                  }
                 >
-                  {category.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      selectedCategory === category.id && styles.categoryChipTextActive,
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
           </ScrollView>
         </View>
 
@@ -125,7 +138,19 @@ export function ServicesScreen() {
           contentContainerStyle={styles.servicesContent}
           showsVerticalScrollIndicator={false}
         >
-          {services.length > 0 ? (
+          {servicesLoading ? (
+            <View style={styles.loadingGrid}>
+              {[1, 2, 3, 4].map((i) => (
+                <View key={i} style={[styles.skeletonCard, { width: CARD_WIDTH }]}>
+                  <View style={styles.skeletonImage} />
+                  <View style={styles.skeletonContent}>
+                    <View style={styles.skeletonLine} />
+                    <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : services.length > 0 ? (
             <View style={styles.servicesGrid}>
               {services.map((service) => (
                 <ServiceCard
@@ -134,7 +159,7 @@ export function ServicesScreen() {
                   onPress={(id: string) =>
                     navigation.navigate('ServiceDetail', { serviceId: id })
                   }
-                  style={{ width: CARD_WIDTH, marginRight: 0 }}
+                  style={styles.cardOverride}
                 />
               ))}
             </View>
@@ -187,6 +212,10 @@ const styles = StyleSheet.create({
     ...typography.h1,
     color: colors.textPrimary,
   },
+  cardOverride: {
+    width: CARD_WIDTH,
+    marginRight: 0,
+  },
   searchContainer: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.sm,
@@ -224,6 +253,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm,
     gap: spacing.xs,
+  },
+  loadingChips: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  loadingGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: CARD_GAP,
+  },
+  skeletonCard: {
+    height: 210,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  skeletonImage: {
+    height: 110,
+    backgroundColor: colors.border,
+  },
+  skeletonContent: {
+    padding: spacing.sm,
+    gap: spacing.xs,
+  },
+  skeletonLine: {
+    height: 14,
+    backgroundColor: colors.borderLight,
+    borderRadius: borderRadius.sm,
+  },
+  skeletonLineShort: {
+    width: '60%',
   },
   categoryChip: {
     paddingHorizontal: spacing.md,

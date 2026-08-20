@@ -1,5 +1,4 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { AdminBookingsScreen } from '../screens/admin/AdminBookingsScreen';
 import { AdminServicesScreen } from '../screens/admin/AdminServicesScreen';

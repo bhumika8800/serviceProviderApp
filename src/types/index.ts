@@ -1,4 +1,4 @@
-export type UserRole = 'customer' | 'admin' | 'service_provider';
+export type UserRole = 'customer' | 'admin' | 'provider';
 
 export interface User {
   id: string;
@@ -25,6 +25,8 @@ export interface Address {
   state: string;
   pincode: string;
   country: string;
+  lat?: number;
+  lng?: number;
   isDefault: boolean;
 }
 
@@ -109,4 +111,32 @@ export interface Category {
   parentId: string | null;
   name: string;
   isActive: boolean;
+}
+
+export interface Notification {
+  id: string;
+  type: 'booking' | 'payment' | 'complaint' | 'promotion' | 'system';
+  title: string;
+  message: string;
+  referenceId?: string;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CartItem {
+  serviceId: string;
+  quantity: number;
+  addedAt: string;
+  service?: Service | null;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalServices: number;
+  bookingsByStatus: Record<string, number>;
+  totalRevenue: number;
+  openComplaints: number;
+  openQueries: number;
 }

@@ -10,6 +10,6 @@ export function useUserRole() {
     role,
     isCustomer: role === 'customer',
     isAdmin: role === 'admin',
-    isProvider: role === 'service_provider',
+    isProvider: role === 'provider',
   };
 }
