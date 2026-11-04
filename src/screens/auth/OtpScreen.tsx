@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../utils/constants';
@@ -19,11 +20,13 @@ import type { RootStackParamList } from '../../navigation/types';
 import type { LoginResponse } from '../../types';
 
 type OtpRouteProp = RouteProp<RootStackParamList, 'Otp'>;
+type OtpNavProp = NativeStackNavigationProp<RootStackParamList, 'Otp'>;
 
 const RESEND_COOLDOWN = 30;
 
 export function OtpScreen() {
   const route = useRoute<OtpRouteProp>();
+  const navigation = useNavigation<OtpNavProp>();
   const { phoneNumber } = route.params;
   const login = useAuthStore((state) => state.login);
   const setLoading = useAuthStore((state) => state.setLoading);
@@ -33,22 +36,28 @@ export function OtpScreen() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (resendCooldown > 0) {
-      timerRef.current = setInterval(() => {
-        setResendCooldown((prev) => prev - 1);
-      }, 1000);
+    if (resendCooldown <= 0) {
+      return;
     }
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
+    const timeout = setTimeout(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timeout);
   }, [resendCooldown]);
 
+  const handleOtpChange = (text: string) => {
+    setOtp(text.replace(/[^0-9]/g, '').slice(0, 6));
+    if (error) {
+      setError('');
+    }
+  };
+
   const handleVerifyOtp = async () => {
+    if (isVerifying) {
+      return;
+    }
     setError('');
 
     if (otp.length < 6) {
@@ -66,7 +75,7 @@ export function OtpScreen() {
       });
       login(data.user, data.token);
     } catch (err: any) {
-      setError(err.message || 'Failed to verify OTP.');
+      setError(err?.message || 'Failed to verify OTP.');
     } finally {
       setIsVerifying(false);
       setLoading(false);
@@ -83,7 +92,7 @@ export function OtpScreen() {
       setResendCooldown(RESEND_COOLDOWN);
       setOtp('');
     } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP.');
+      setError(err?.message || 'Failed to resend OTP.');
     } finally {
       setIsResending(false);
     }
@@ -96,7 +105,7 @@ export function OtpScreen() {
     return phone;
   };
 
-  const canResend = resendCooldown === 0 && !isResending;
+  const canResend = resendCooldown === 0 && !isResending && !isVerifying;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -115,12 +124,17 @@ export function OtpScreen() {
         <View style={styles.form}>
           <Input
             value={otp}
-            onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, '').slice(0, 6))}
+            onChangeText={handleOtpChange}
             placeholder="Enter OTP"
             keyboardType="number-pad"
             maxLength={6}
             error={error}
             autoFocus
+            autoComplete="sms-otp"
+            textContentType="oneTimeCode"
+            returnKeyType="done"
+            onSubmitEditing={handleVerifyOtp}
+            editable={!isVerifying}
           />
 
           <Button
@@ -146,6 +160,13 @@ export function OtpScreen() {
             </Text>
           )}
         </View>
+
+        <Button
+          title="Change phone number"
+          onPress={() => navigation.goBack()}
+          variant="ghost"
+          disabled={isVerifying}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

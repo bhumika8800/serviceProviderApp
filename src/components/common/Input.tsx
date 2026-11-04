@@ -1,18 +1,23 @@
 import { useState } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
+import type { TextInputProps } from 'react-native';
 import { colors, spacing, borderRadius, typography } from '../../utils/constants';
 
 interface InputProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  keyboardType?: 'default' | 'phone-pad' | 'numeric' | 'email-address' | 'number-pad';
+  keyboardType?: TextInputProps['keyboardType'];
   maxLength?: number;
   error?: string;
   label?: string;
   autoFocus?: boolean;
   editable?: boolean;
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+  autoComplete?: TextInputProps['autoComplete'];
+  textContentType?: TextInputProps['textContentType'];
+  returnKeyType?: TextInputProps['returnKeyType'];
+  onSubmitEditing?: TextInputProps['onSubmitEditing'];
 }
 
 export function Input({
@@ -26,6 +31,10 @@ export function Input({
   autoFocus = false,
   editable = true,
   autoCapitalize,
+  autoComplete,
+  textContentType,
+  returnKeyType,
+  onSubmitEditing,
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -48,6 +57,10 @@ export function Input({
         autoFocus={autoFocus}
         editable={editable}
         autoCapitalize={autoCapitalize}
+        autoComplete={autoComplete}
+        textContentType={textContentType}
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
       />
