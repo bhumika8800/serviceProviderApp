@@ -1,97 +1,196 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# ServiceProviderApp
 
-# Getting Started
+A cross-platform mobile application for booking home services (cleaning, plumbing, electrical, beauty, appliance repair, painting). Built with **React Native** (TypeScript) frontend and **Express.js** (Node.js) backend, using MongoDB, Firebase Auth, Razorpay payments, and Cloudinary media storage.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Architecture
 
-## Step 1: Start Metro
+```
+React Native App (TypeScript)
+  ├── Navigation (React Navigation — Stack + Bottom Tabs)
+  ├── State (Zustand — auth, booking stores)
+  ├── Server State (TanStack Query — API caching)
+  └── Services (Axios HTTP client with JWT interceptor)
+        │
+        ▼
+Express.js API Gateway (Node.js)
+  ├── Middleware (Morgan, CORS, JWT auth, RBAC, validation)
+  ├── Controllers → Models (Mongoose) → MongoDB
+  └── Integrations: Firebase Admin, Razorpay, Cloudinary, FCM
+```
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Tech Stack
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React Native + TypeScript |
+| State Management | Zustand |
+| Server State | TanStack Query (React Query) |
+| Navigation | React Navigation |
+| HTTP Client | Axios |
+| Backend | Node.js + Express.js |
+| Database | MongoDB + Mongoose |
+| Auth | Firebase Auth (Phone OTP) + JWT |
+| Payments | Razorpay |
+| Image Storage | Cloudinary |
+| Push Notifications | Firebase Cloud Messaging |
+| Testing | Jest, mongodb-memory-server, supertest |
 
-```sh
-# Using npm
+## Project Structure
+
+```
+ServiceProviderApp/
+├── src/                          # React Native frontend
+│   ├── screens/                  # 16 screens (auth, user, admin)
+│   ├── navigation/               # AppNavigator, UserTabNavigator, AdminTabNavigator
+│   ├── services/                 # API client, auth, booking, service, user, notification, admin
+│   ├── store/                    # Zustand stores (useAuthStore, useBookingStore)
+│   ├── components/               # Reusable UI (common/, domain, modals, admin)
+│   ├── hooks/                    # TanStack Query hooks (6 hook files)
+│   ├── types/                    # TypeScript interfaces
+│   ├── utils/                    # Constants, formatters, validators
+│   ├── data/                     # Mock data (services, bookings, user)
+│   └── config/                   # Environment config
+│
+├── backend/                      # Express.js API server
+│   ├── config/                   # db, firebase, razorpay, cloudinary
+│   ├── controllers/              # 10 controllers (auth, user, service, booking, payment, etc.)
+│   ├── middleware/                # authMiddleware, adminMiddleware, errorMiddleware
+│   ├── models/                   # 9 Mongoose models (User, Category, Service, Booking, etc.)
+│   ├── routes/                   # 10 route files mounted at /api/v1/*
+│   ├── utils/                    # seed, serialize helpers
+│   ├── app.js                    # Express app setup
+│   ├── server.js                 # Entry point
+│   └── __tests__/                # 16 test files (114 tests)
+│
+├── __tests__/                    # Frontend tests (14 test files, 74 tests)
+├── __mocks__/                    # Jest mocks (AsyncStorage)
+├── docs/                         # Project documentation
+│   ├── context/                  # Architecture, tech stack, conventions, theme, etc.
+│   └── plan/                     # Implementation plan
+│
+├── jest.config.js                # Frontend Jest config
+├── package.json
+├── tsconfig.json
+└── App.tsx                       # App entry point
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js >= 18
+- React Native CLI environment ([Setup Guide](https://reactnative.dev/docs/set-up-your-environment))
+- MongoDB (local or Atlas)
+- Firebase project (Auth + Cloud Messaging)
+- Razorpay account (test keys)
+- Cloudinary account
+
+### Frontend Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Start Metro bundler
 npm start
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# Run on Android
 npm run android
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# Run on iOS (install pods first)
+cd ios && pod install && cd ..
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+### Backend Setup
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```bash
+cd backend
 
-## Step 3: Modify your app
+# Install dependencies
+npm install
 
-Now that you have successfully run the app, let's make changes!
+# Create .env file (see Environment Variables below)
+cp .env.example .env
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+# Start development server
+npm run dev
+```
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+### Running Tests
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+```bash
+# Frontend tests (from root)
+npm test
 
-## Congratulations! :tada:
+# Backend tests (from backend/)
+cd backend
+npm test
+```
 
-You've successfully run and modified your React Native App. :partying_face:
+## Environment Variables
 
-### Now what?
+### Backend (`backend/.env`)
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+```
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/serviceprovider
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRY=7d
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
 
-# Troubleshooting
+### Frontend (`.env`)
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+```
+API_BASE_URL=http://localhost:3000/api/v1
+```
 
-# Learn More
+## API Overview
 
-To learn more about React Native, take a look at the following resources:
+All routes prefixed with `/api/v1`. Protected routes require `Authorization: Bearer <JWT>`.
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+| Module | Endpoints | Description |
+|--------|-----------|-------------|
+| Auth | `POST /auth/verify`, `/auth/complete-profile`, `/auth/logout` | Firebase OTP → JWT |
+| Users | `GET/PATCH /users/me`, address CRUD, image upload | Profile management |
+| Services | `GET/POST/PATCH/DELETE /services`, `GET /categories` | Service catalog |
+| Bookings | `GET/POST /bookings`, `PATCH /:id/cancel`, `PATCH /:id/status` | Booking lifecycle |
+| Payments | `POST /payments/create-order`, `/verify`, `/webhook` | Razorpay integration |
+| Reviews | `POST /reviews`, `GET /services/:id/reviews` | Ratings & reviews |
+| Complaints | `GET/POST /complaints`, `PATCH /:id/status` | Support tickets |
+| Notifications | `GET /notifications`, `PATCH /:id/read`, `/read-all` | Push + in-app |
+| Queries | `POST /queries`, `GET /queries`, `PATCH /:id/close` | Contact us |
+| Admin | `GET /admin/stats`, user management, booking/service admin | Dashboard |
+
+## Testing
+
+- **Backend:** 16 test suites, 114 tests using Jest + mongodb-memory-server (in-memory MongoDB)
+- **Frontend:** 14 test suites, 74 tests using Jest + @react-native/jest-preset
+- Tests cover controllers, middleware, utilities, services, hooks, stores, and integration flows
+
+```bash
+# Run all tests
+cd backend && npm test    # Backend: 114 tests
+npm test                  # Frontend: 74 tests
+```
+
+## Documentation
+
+- [Architecture](docs/context/architecture.md) — System design, layer architecture, data flows
+- [Backend](docs/context/backend.md) — API endpoints, data model, auth flow
+- [Frontend](docs/context/frontend.md) — UI specification, screen layouts, component inventory
+- [Tech Stack](docs/context/tech-stack.md) — Technology choices
+- [Conventions](docs/context/conventions.md) — Coding, naming, API, and Git conventions
+- [Theme](docs/context/theme.md) — Design tokens, colors, typography, spacing
+- [DB Schema](docs/context/db-table.md) — MongoDB collections and indexes
+- [Application Flows](docs/context/applicationflow.md) — Business process flows
+- [Implementation Plan](docs/plan/implementationplan.md) — Phased development plan

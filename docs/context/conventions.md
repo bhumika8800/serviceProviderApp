@@ -418,3 +418,65 @@ chore(deps): upgrade react-native to 0.76
 - Upload via backend (Multer → Cloudinary SDK) to keep API keys server-side
 - Returned `secure_url` stored in database
 - Profile images overwritten on re-upload (same `public_id` pattern per user)
+
+---
+
+## 11. Testing Conventions
+
+### Test File Location
+- **Backend tests:** `backend/__tests__/` — mirrors controller/model structure
+- **Frontend tests:** `__tests__/` at project root — mirrors src/ structure (hooks/, services/, store/, utils/)
+- **Naming:** `<module>.test.js` — co-located by domain within `__tests__/`
+
+### Backend Testing
+- **Framework:** Jest with `testEnvironment: "node"`
+- **Database:** mongodb-memory-server (in-memory MongoDB, no external DB needed)
+- **Setup:** `backend/__tests__/setup.js` — MongoMemoryServer lifecycle, mock factories
+- **Pattern:** Each controller test gets its own in-memory MongoDB instance
+- **Coverage:** Jest `--coverage` flag, output to `backend/coverage/`
+
+### Frontend Testing
+- **Framework:** Jest with `@react-native/jest-preset`
+- **Module mapping:** AsyncStorage mapped to `__mocks__/@react-native-async-storage/async-storage.js`
+- **Exclusions:** `testPathIgnorePatterns: ['/node_modules/', '/backend/']`
+- **Pattern:** Simple export/behavior tests for hooks, services, stores, and utils
+
+### Test Structure
+```javascript
+// Backend controller test pattern
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+
+let mongoServer;
+
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri());
+});
+
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
+
+describe('Controller', () => {
+  test('should do X', async () => {
+    // Arrange, Act, Assert
+  });
+});
+```
+
+### Running Tests
+```bash
+# Backend (from backend/)
+npm test                    # Run all tests
+npm test -- --coverage      # With coverage
+
+# Frontend (from root)
+npm test                    # Run all frontend tests
+```
+
+### Coverage Targets
+- Backend: All controllers, middleware, and utils covered
+- Frontend: All hooks, services, stores, and utils covered
+- Integration tests for critical business flows (booking lifecycle, admin workflow)

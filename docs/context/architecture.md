@@ -80,10 +80,12 @@ ServiceProviderApp follows a **client-server architecture** with a React Native 
 │  │  ┌─────────────┐  ┌────────────────┐  ┌──────────────────────┐  │ │
 │  │  │ auth/       │  │ user/          │  │ admin/               │  │ │
 │  │  │ • Splash    │  │ • Home         │  │ • Dashboard          │  │ │
-│  │  │ • Login     │  │ • Booking      │  │ • Bookings           │  │ │
-│  │  │ • OTP       │  │ • MyBookings   │  │ • Services           │  │ │
-│  │  │             │  │ • Profile      │  │ • Clients            │  │ │
-│  │  │             │  │ • ServiceDetail│  │ • ClientDetail       │  │ │
+│  │  │ • Login     │  │ • Services     │  │ • Bookings           │  │ │
+│  │  │ • OTP       │  │ • ServiceDetail│  │ • Services           │  │ │
+│  │  │ • Complete  │  │ • Booking      │  │ • Clients            │  │ │
+│  │  │   Profile   │  │ • MyBookings   │  │ • ClientDetail       │  │ │
+│  │  │             │  │ • Notifications│  │                      │  │ │
+│  │  │             │  │ • Profile      │  │                      │  │ │
 │  │  └─────────────┘  └────────────────┘  └──────────────────────┘  │ │
 │  └──────────────────────────────────────────────────────────────────┘ │
 │                                                                       │
@@ -95,8 +97,10 @@ ServiceProviderApp follows a **client-server architecture** with a React Native 
 │                                                                       │
 │  ┌──────────────────────────────────────────────────────────────────┐ │
 │  │  Reusable Components (src/components/)                            │ │
-│  │  common/: Button, Input, Loader, EmptyState, StatusBadge         │ │
-│  │  Domain: ServiceCard, BookingItem, ClientCard                    │ │
+│  │  common/: Button, Input, Loader, EmptyState, StatusBadge, MenuItem│ │
+│  │  Domain: ServiceCard, BookingItem, ProfileInfoCard, PastServiceCard│ │
+│  │  Admin: ClientCard                                                │ │
+│  │  Modals: EditProfileModal, AvatarPickerModal, AddressManagerModal │ │
 │  └──────────────────────────────────────────────────────────────────┘ │
 │                                                                       │
 │  ┌──────────────────────────────────────────────────────────────────┐ │
@@ -109,15 +113,23 @@ ServiceProviderApp follows a **client-server architecture** with a React Native 
 │  ┌──────────────────────────────────────────────────────────────────┐ │
 │  │  Services (src/services/)                                         │ │
 │  │  firebase.ts — Firebase SDK init                                  │ │
+│  │  apiClient.ts — Axios instance with JWT interceptor               │ │
 │  │  authService.ts — Firebase Auth + API auth calls                  │ │
-│  │  bookingService.ts, serviceCatalog.ts, userService.ts            │ │
-│  │  notificationService.ts — FCM token registration                 │ │
+│  │  bookingService.ts — Booking API calls                            │ │
+│  │  servicesCatalog.ts — Service/category API calls                  │ │
+│  │  userService.ts — User profile API calls                          │ │
+│  │  notificationService.ts — Notification API calls                  │ │
+│  │  adminService.ts — Admin stats/users API calls                    │ │
 │  └──────────────────────────────────────────────────────────────────┘ │
 │                                                                       │
 │  ┌──────────────────────────────────────────────────────────────────┐ │
 │  │  Hooks (src/hooks/) — TanStack Query                             │ │
-│  │  useBookings.ts (useQuery/useMutation), useServices.ts,          │ │
-│  │  useUserRole.ts                                                   │ │
+│  │  useBookings.ts — Booking CRUD hooks                              │ │
+│  │  useServices.ts — Service listing/filtering hooks                 │ │
+│  │  useUserRole.ts — Role-based access hook                          │ │
+│  │  useNotifications.ts — Notification list/read hooks               │ │
+│  │  useUserProfile.ts — User profile/address hooks                   │ │
+│  │  useAdmin.ts — Admin stats/users/bookings hooks                   │ │
 │  └──────────────────────────────────────────────────────────────────┘ │
 │                                                                       │
 │  ┌──────────────────────────────────────────────────────────────────┐ │
@@ -173,13 +185,13 @@ ServiceProviderApp follows a **client-server architecture** with a React Native 
 │  │  User          │ userController.js        │ /users/*              │ │
 │  │  Service       │ serviceController.js     │ /services/*           │ │
 │  │  Category      │ (in serviceController)   │ /categories/*         │ │
-│  │  Cart          │ (in userController)      │ /cart/*               │ │
 │  │  Booking       │ bookingController.js     │ /bookings/*           │ │
 │  │  Payment       │ paymentController.js     │ /payments/*           │ │
+│  │  Admin         │ adminController.js       │ /admin/*              │ │
 │  │  Review        │ reviewController.js      │ /reviews/*            │ │
 │  │  Complaint     │ complaintController.js   │ /complaints/*         │ │
 │  │  Notification  │ notificationController.js│ /notifications/*      │ │
-│  │  Query         │ (contact us)             │ /queries/*            │ │
+│  │  Query         │ queryController.js       │ /queries/*            │ │
 │  └──────────────────────────────────────────────────────────────────┘ │
 │                                                                       │
 │  ┌──────────────────────────────────────────────────────────────────┐ │

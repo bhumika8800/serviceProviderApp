@@ -5,73 +5,92 @@ ServiceProviderApp/
 │
 ├── src/                              # All app source code
 │
-│   ├── screens/                      # All screen components
+│   ├── screens/                      # All screen components (16 screens)
 │   │
-│   │   ├── auth/                     # Login & OTP flow
-│   │   │   ├── LoginScreen.tsx
-│   │   │   └── OtpScreen.tsx
+│   │   ├── auth/                     # Login & OTP flow (4 screens)
+│   │   │   ├── SplashScreen.tsx      # ✅ App loading/splash screen
+│   │   │   ├── LoginScreen.tsx       # ✅ Phone OTP + Google sign-in + Guest
+│   │   │   ├── OtpScreen.tsx         # ✅ OTP verification with timer
+│   │   │   └── CompleteProfileScreen.tsx # ✅ Profile completion form
 │   │   │
-│   │   ├── user/                     # Customer-facing screens
-│   │   │   ├── HomeScreen.tsx        # ✅ Full — featured services, steps, benefits, help
-│   │   │   ├── ServicesScreen.tsx    # ✅ Full — search, category filters, 2-col card grid, mock data
-│   │   │   ├── ServiceDetailScreen.tsx # ⬜ Placeholder
-│   │   │   ├── BookingScreen.tsx     # ⬜ Placeholder
-│   │   │   ├── MyBookingsScreen.tsx  # ✅ Full — Active/History tabs, cancel, FAB, mock data
-│   │   │   └── ProfileScreen.tsx     # ⬜ Placeholder
+│   │   ├── user/                     # Customer-facing screens (7 screens)
+│   │   │   ├── HomeScreen.tsx        # ✅ Featured services, steps, benefits, help
+│   │   │   ├── ServicesScreen.tsx    # ✅ Search, category filters, 2-col card grid
+│   │   │   ├── ServiceDetailScreen.tsx # ✅ Service detail, pricing, reviews
+│   │   │   ├── BookingScreen.tsx     # ✅ Address, date/time selection, confirmation
+│   │   │   ├── MyBookingsScreen.tsx  # ✅ Active/History tabs, cancel, FAB
+│   │   │   ├── NotificationsScreen.tsx # ✅ Notification list with read/unread
+│   │   │   └── ProfileScreen.tsx     # ✅ Profile, settings, support options
 │   │   │
-│   │   └── admin/                    # Company admin screens
-│   │       ├── AdminDashboardScreen.tsx
-│   │       ├── AdminBookingsScreen.tsx
-│   │       ├── AdminClientsScreen.tsx
-│   │       ├── AdminServicesScreen.tsx
-│   │       └── ClientDetailScreen.tsx
+│   │   └── admin/                    # Company admin screens (5 screens)
+│   │       ├── AdminDashboardScreen.tsx # ✅ Stats cards, booking status breakdown
+│   │       ├── AdminBookingsScreen.tsx  # ✅ Booking management
+│   │       ├── AdminClientsScreen.tsx   # ✅ Client listing
+│   │       ├── AdminServicesScreen.tsx  # ✅ Service management
+│   │       └── ClientDetailScreen.tsx   # ✅ Client detail view
 │   │
 │   ├── data/                         # Mock data (offline/dev mode)
+│   │   ├── mockUser.ts               # Mock user profile data
 │   │   ├── mockServices.ts           # 18 services across 6 categories with Unsplash images
 │   │   └── mockBookings.ts           # 6 bookings across all statuses
 │   │
 │   ├── navigation/                   # Navigation configuration
-│   │   ├── AppNavigator.tsx
-│   │   ├── UserTabNavigator.tsx
-│   │   ├── AdminTabNavigator.tsx
-│   │   └── types.ts
+│   │   ├── AppNavigator.tsx          # ✅ Root stack (auth gating: isAuthenticated || isGuest)
+│   │   ├── UserTabNavigator.tsx      # ✅ Bottom tabs: Home, Services, Bookings, Profile
+│   │   ├── AdminTabNavigator.tsx     # ✅ Bottom tabs: Dashboard, Bookings, Services, Clients
+│   │   └── types.ts                  # ✅ RootStackParamList type definitions
 │   │
-│   ├── services/                     # Firebase service layer
-│   │   ├── firebase.ts
-│   │   ├── authService.ts
-│   │   ├── bookingService.ts
-│   │   ├── serviceCatalog.ts
-│   │   ├── userService.ts
-│   │   └── notificationService.ts
+│   ├── services/                     # API & integration layer (8 files)
+│   │   ├── firebase.ts               # ✅ Firebase client SDK initialization
+│   │   ├── apiClient.ts              # ✅ Axios instance with JWT interceptor, 401 auto-logout
+│   │   ├── authService.ts            # ✅ Firebase phone auth, Google sign-in
+│   │   ├── bookingService.ts         # ✅ Booking API calls
+│   │   ├── servicesCatalog.ts        # ✅ Service/category API calls
+│   │   ├── userService.ts            # ✅ User profile API calls
+│   │   ├── notificationService.ts    # ✅ Notification API calls
+│   │   └── adminService.ts           # ✅ Admin stats/users/bookings API calls
 │   │
 │   ├── store/                        # Zustand global state
-│   │   ├── useAuthStore.ts
-│   │   └── useBookingStore.ts
+│   │   ├── useAuthStore.ts           # ✅ Auth state with AsyncStorage persistence + guest mode
+│   │   └── useBookingStore.ts        # ✅ Booking state management
 │   │
-│   ├── components/                   # Reusable UI components
+│   ├── components/                   # Reusable UI components (15 components)
 │   │   │
-│   │   ├── common/
-│   │   │   ├── Button.tsx
-│   │   │   ├── Input.tsx
-│   │   │   ├── Loader.tsx
-│   │   │   ├── EmptyState.tsx
-│   │   │   └── StatusBadge.tsx
+│   │   ├── common/                   # Generic UI kit (6 components)
+│   │   │   ├── Button.tsx            # ✅ Reusable button (primary, outline, ghost variants)
+│   │   │   ├── Input.tsx             # ✅ Text input with label/error state
+│   │   │   ├── Loader.tsx            # ✅ Loading spinner
+│   │   │   ├── EmptyState.tsx        # ✅ Empty state placeholder
+│   │   │   ├── MenuItem.tsx          # ✅ Menu item row (profile settings)
+│   │   │   └── StatusBadge.tsx       # ✅ Color-coded status badge
 │   │   │
-│   │   ├── ServiceCard.tsx           # ✅ Updated — Image support, optional style prop
-│   │   └── BookingItem.tsx           # ✅ Built — service icon, status badge, date, cancel
+│   │   ├── ServiceCard.tsx           # ✅ Service card with image, price, rating
+│   │   ├── BookingItem.tsx           # ✅ Booking list item with status badge
+│   │   ├── ProfileInfoCard.tsx       # ✅ Profile display card
+│   │   ├── PastServiceCard.tsx       # ✅ Past service history card
+│   │   ├── ClientCard.tsx            # ✅ Client list card (admin)
+│   │   ├── EditProfileModal.tsx      # ✅ Edit profile form modal
+│   │   ├── AvatarPickerModal.tsx     # ✅ Avatar selection modal
+│   │   └── AddressManagerModal.tsx   # ✅ Address add/edit modal
 │   │
-│   ├── hooks/                        # Custom React hooks + TanStack Query hooks
-│   │   ├── useBookings.ts
-│   │   ├── useServices.ts
-│   │   └── useUserRole.ts
+│   ├── hooks/                        # Custom React hooks + TanStack Query hooks (6 files)
+│   │   ├── useBookings.ts            # ✅ Booking CRUD hooks (useQuery/useMutation)
+│   │   ├── useServices.ts            # ✅ Service listing/filtering hooks
+│   │   ├── useUserRole.ts            # ✅ Role-based access hook
+│   │   ├── useNotifications.ts       # ✅ Notification list/read hooks
+│   │   ├── useUserProfile.ts         # ✅ User profile/address hooks
+│   │   └── useAdmin.ts               # ✅ Admin stats/users/bookings hooks
 │   │
 │   ├── types/                        # TypeScript interfaces
-│   │   └── index.ts
+│   │   └── index.ts                  # ✅ User, Booking, Service, Category, Notification, etc.
 │   │
-│   └── utils/                        # Helper functions
-│       ├── constants.ts
-│       ├── formatters.ts
-│       └── validators.ts
+│   ├── utils/                        # Helper functions
+│   │   ├── constants.ts              # ✅ Design tokens (colors, spacing, typography, shadows)
+│   │   ├── formatters.ts             # ✅ Currency, date, phone formatters
+│   │   └── validators.ts             # ✅ Email, phone, pincode validators
+│   │
+│   └── config/                       # Environment configuration
+│       └── env.ts                    # ✅ API base URL (localhost / Android emulator)
 │
 ├── android/                          # Android native project
 │   ├── app/
@@ -82,12 +101,23 @@ ServiceProviderApp/
 ├── ios/                              # iOS native project
 │   └── GoogleService-Info.plist
 │
+├── __tests__/                        # Frontend test suite (14 test files, 74 tests)
+│   ├── hooks/                        # Hook export tests (6 files)
+│   ├── services/                     # Service function tests (5 files)
+│   ├── store/                        # Zustand store tests (1 file)
+│   └── utils/                        # Utility function tests (2 files)
+│
+├── __mocks__/                        # Jest mocks
+│   └── @react-native-async-storage/
+│       └── async-storage.js          # ✅ AsyncStorage mock for tests
+│
 ├── App.tsx                           # Application entry point (QueryClientProvider + navigation)
 ├── index.js                          # React Native registration
 ├── package.json                      # NPM dependencies
+├── jest.config.js                    # Jest config (@react-native/jest-preset)
+├── tsconfig.json                     # TypeScript configuration
 ├── .env                              # Environment variables
-├── .gitignore
-└── tsconfig.json                     # TypeScript configuration
+└── .gitignore
 ```
 
 # Frontend UI Specification
@@ -259,3 +289,54 @@ Each sub-service should display:
 ## Theme
 - **Primary Colors:** Royal Blue (#2563EB), Yellow (#FACC15)
 - **Design Style:** Modern, Clean, Mobile-first, Card-based UI, Rounded corners, Soft shadows
+
+## Testing
+
+The frontend uses **Jest** with **@react-native/jest-preset** for testing.
+
+### Test Structure
+
+```
+__tests__/
+├── hooks/                      # Hook export/behavior tests
+│   ├── useAdmin.test.js
+│   ├── useBookings.test.js
+│   ├── useNotifications.test.js
+│   ├── useServices.test.js
+│   ├── useUserProfile.test.js
+│   └── useUserRole.test.js
+├── services/                   # Service function tests
+│   ├── adminService.test.js
+│   ├── bookingService.test.js
+│   ├── notificationService.test.js
+│   ├── servicesCatalog.test.js
+│   └── userService.test.js
+├── store/                      # Zustand store tests
+│   └── useAuthStore.test.js
+└── utils/                      # Utility function tests
+    ├── formatters.test.js
+    └── validators.test.js
+```
+
+### Running Tests
+
+```bash
+# From project root
+npm test                    # Run all 74 tests
+```
+
+### Mock Setup
+
+- `__mocks__/@react-native-async-storage/async-storage.js` — AsyncStorage mock for Zustand persistence tests
+- Jest config maps `@react-native-async-storage/async-storage` to the mock file
+- Backend directory excluded from frontend test runs via `testPathIgnorePatterns`
+
+### Test Coverage
+
+| Area | Test Suites | Tests |
+|------|-------------|-------|
+| Hooks | 6 | ~6 |
+| Services | 5 | ~40 |
+| Store | 1 | ~8 |
+| Utils | 2 | ~20 |
+| **Total** | **14** | **~74** |

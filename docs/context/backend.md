@@ -48,53 +48,79 @@ Express.js API Gateway
 backend/
 │
 ├── config/
-│   ├── db.js
-│   ├── firebase.js
-│   ├── cloudinary.js
-│   └── razorpay.js
+│   ├── db.js                        # MongoDB/Mongoose connection
+│   ├── firebase.js                  # Firebase Admin SDK init (auth + messaging)
+│   ├── cloudinary.js                # Cloudinary image upload config
+│   └── razorpay.js                  # Razorpay payment gateway init
 │
 ├── controllers/
-│   ├── authController.js
-│   ├── userController.js
-│   ├── serviceController.js
-│   ├── bookingController.js
-│   ├── paymentController.js
-│   ├── complaintController.js
-│   ├── notificationController.js
-│   └── reviewController.js
+│   ├── authController.js            # Firebase verify, phone OTP, Google sign-in
+│   ├── userController.js            # User profile, address CRUD, image upload
+│   ├── serviceController.js         # Service & category CRUD
+│   ├── bookingController.js         # Booking lifecycle management
+│   ├── paymentController.js         # Razorpay order/webhook handling
+│   ├── adminController.js           # Admin dashboard stats, user management
+│   ├── complaintController.js       # Complaint filing & resolution
+│   ├── notificationController.js    # Notification list & read status
+│   ├── reviewController.js          # Review submission & listing
+│   └── queryController.js           # Contact-us query management
 │
 ├── middleware/
-│   ├── authMiddleware.js
-│   ├── adminMiddleware.js
-│   ├── uploadMiddleware.js
-│   └── errorMiddleware.js
+│   ├── authMiddleware.js            # JWT token verification
+│   ├── adminMiddleware.js           # Admin role-based access gate
+│   └── errorMiddleware.js           # Centralized error handler
 │
 ├── models/
-│   ├── User.js
-│   ├── Category.js
-│   ├── Service.js
-│   ├── Booking.js
-│   ├── Payment.js
-│   ├── Notification.js
-│   ├── Complaint.js
-│   ├── Review.js
-│   └── Query.js
+│   ├── User.js                      # User schema (with embedded addresses, cart_items)
+│   ├── Category.js                  # Service category (self-referencing parent_id)
+│   ├── Service.js                   # Service catalog (avg_rating, review_count cached)
+│   ├── Booking.js                   # Booking (extended reference snapshots)
+│   ├── Payment.js                   # Payment audit trail
+│   ├── Notification.js              # In-app + push notification records
+│   ├── Complaint.js                 # Support complaint tickets
+│   ├── Review.js                    # Service reviews (one per booking)
+│   └── Query.js                     # Contact-us / lead form submissions
 │
 ├── routes/
-│   ├── authRoutes.js
-│   ├── userRoutes.js
-│   ├── serviceRoutes.js
-│   ├── bookingRoutes.js
-│   ├── paymentRoutes.js
-│   ├── reviewRoutes.js
-│   ├── complaintRoutes.js
-│   └── notificationRoutes.js
+│   ├── authRoutes.js                # /api/v1/auth/*
+│   ├── userRoutes.js                # /api/v1/users/*
+│   ├── serviceRoutes.js             # /api/v1/services/* + /api/v1/categories/*
+│   ├── bookingRoutes.js             # /api/v1/bookings/*
+│   ├── paymentRoutes.js             # /api/v1/payments/*
+│   ├── adminRoutes.js               # /api/v1/admin/*
+│   ├── reviewRoutes.js              # /api/v1/reviews/* + /api/v1/services/:id/reviews
+│   ├── complaintRoutes.js           # /api/v1/complaints/*
+│   ├── notificationRoutes.js        # /api/v1/notifications/*
+│   └── queryRoutes.js               # /api/v1/queries/*
 │
 ├── utils/
-├── uploads/
-├── app.js
-├── server.js
-└── .env
+│   ├── seed.js                      # Database seeding utility
+│   └── serialize.js                 # Serialization helpers (serializeUser, etc.)
+│
+├── __tests__/                       # Test suite (16 test files, 114 tests)
+│   ├── setup.js                     # MongoMemoryServer setup, mock factories
+│   ├── setup.test.js                # Setup verification
+│   ├── authController.test.js
+│   ├── userController.test.js
+│   ├── serviceController.test.js
+│   ├── bookingController.test.js
+│   ├── paymentController.test.js
+│   ├── adminController.test.js
+│   ├── complaintController.test.js
+│   ├── notificationController.test.js
+│   ├── reviewController.test.js
+│   ├── queryController.test.js
+│   ├── middleware.test.js
+│   ├── seed.test.js
+│   ├── serialize.test.js
+│   └── integration/
+│       ├── bookingLifecycle.test.js
+│       └── adminWorkflow.test.js
+│
+├── app.js                           # Express app setup, middleware, route mounting
+├── server.js                        # Entry point (DB connect + HTTP listen)
+├── package.json                     # Dependencies + Jest config
+└── .env                             # Environment variables (not committed)
 ```
 
 ## Data Model
@@ -396,3 +422,49 @@ CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 ```
+
+## Testing
+
+The backend uses **Jest** with **mongodb-memory-server** for isolated, in-memory MongoDB testing (no external database required).
+
+### Test Structure
+
+```
+backend/__tests__/
+├── setup.js                     # MongoMemoryServer lifecycle, mock factories
+├── setup.test.js                # Setup verification
+├── authController.test.js       # Auth endpoint tests
+├── userController.test.js       # User profile tests
+├── serviceController.test.js    # Service CRUD tests
+├── bookingController.test.js    # Booking lifecycle tests
+├── paymentController.test.js    # Payment flow tests
+├── adminController.test.js      # Admin dashboard tests
+├── complaintController.test.js  # Complaint management tests
+├── notificationController.test.js # Notification tests
+├── reviewController.test.js     # Review submission tests
+├── queryController.test.js      # Query management tests
+├── middleware.test.js           # Auth/admin middleware tests
+├── seed.test.js                 # Seed utility tests
+├── serialize.test.js            # Serialization tests
+└── integration/
+    ├── bookingLifecycle.test.js # End-to-end booking flow
+    └── adminWorkflow.test.js    # Admin workflow tests
+```
+
+### Running Tests
+
+```bash
+cd backend
+npm test                    # Run all 114 tests
+npm test -- --coverage      # Run with coverage report
+```
+
+### Test Coverage
+
+| Area | Test Suites | Tests |
+|------|-------------|-------|
+| Controllers | 10 | ~80 |
+| Middleware | 1 | ~8 |
+| Utils | 2 | ~14 |
+| Integration | 2 | ~12 |
+| **Total** | **16** | **~114** |
