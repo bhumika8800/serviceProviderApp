@@ -29,6 +29,17 @@ apiClient.interceptors.response.use(
       useAuthStore.getState().logout();
     }
 
+    if (!error.response) {
+      const isTimeout = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT';
+      return Promise.reject({
+        message: isTimeout
+          ? 'The server took too long to respond. Please try again.'
+          : 'Unable to reach the server. Check your internet connection and that the backend is running.',
+        code: isTimeout ? 'TIMEOUT' : 'NETWORK_ERROR',
+        status: undefined,
+      });
+    }
+
     const message =
       error.response?.data?.message || error.message || 'Something went wrong';
     const code = error.response?.data?.code;

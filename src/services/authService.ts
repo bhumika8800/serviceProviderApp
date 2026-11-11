@@ -29,6 +29,10 @@ export async function sendOtp(phoneNumber: string): Promise<void> {
     confirmationResult = await signInWithPhoneNumber(firebaseAuth, phoneNumber);
   } catch (error: any) {
     confirmationResult = null;
+    console.error('[sendOtp] failed', {
+      code: error?.code,
+      message: error?.message,
+    });
 
     switch (error.code) {
       case 'auth/invalid-phone-number':
@@ -37,6 +41,10 @@ export async function sendOtp(phoneNumber: string): Promise<void> {
         throw new Error('Too many requests. Please try again later.');
       case 'auth/quota-exceeded':
         throw new Error('SMS quota exceeded. Please try again later.');
+      case 'auth/operation-not-allowed':
+        throw new Error(
+          'Phone sign-in is blocked. Enable the Phone provider, allow your region in Authentication → Settings → SMS region policy, and link Cloud billing (SMS is unavailable on the Spark plan).'
+        );
       case 'auth/billing-not-enabled':
         throw new Error('Phone sign-in is not enabled for this project. Check Firebase billing.');
       case 'auth/internal-error':
@@ -63,6 +71,11 @@ export async function verifyOtp(otpCode: string): Promise<string> {
     confirmationResult = null;
     return idToken;
   } catch (error: any) {
+    console.error('[verifyOtp] failed', {
+      code: error?.code,
+      message: error?.message,
+    });
+
     switch (error.code) {
       case 'auth/invalid-verification-code':
         throw new Error('Invalid OTP. Please try again.');
