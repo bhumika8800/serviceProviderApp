@@ -1,10 +1,14 @@
-const auth = () => ({
-  signInWithPhoneNumber: jest.fn(),
-  signInWithCredential: jest.fn(),
-  signOut: jest.fn(),
+const mockAuthInstance = {
   currentUser: null,
-});
+};
 
+const auth = () => mockAuthInstance;
+
+auth.getAuth = () => mockAuthInstance;
+auth.getIdToken = jest.fn();
+auth.signInWithPhoneNumber = jest.fn();
+auth.signInWithCredential = jest.fn();
+auth.signOut = jest.fn();
 auth.GoogleAuthProvider = {
   credential: jest.fn(),
 };

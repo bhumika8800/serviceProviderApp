@@ -1,10 +1,20 @@
-import auth, { type FirebaseAuthTypes } from '@react-native-firebase/auth';
+import {
+  getAuth,
+  getIdToken,
+  GoogleAuthProvider,
+  signInWithCredential,
+  signInWithPhoneNumber,
+  signOut,
+  type ConfirmationResult,
+} from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '../config/env';
 
 export const GOOGLE_SIGN_IN_CANCELLED = 'Google sign-in was cancelled.';
 
-let confirmationResult: FirebaseAuthTypes.ConfirmationResult | null = null;
+const firebaseAuth = getAuth();
+
+let confirmationResult: ConfirmationResult | null = null;
 
 export function getConfirmationResult() {
   return confirmationResult;
@@ -16,7 +26,7 @@ export function clearConfirmationResult() {
 
 export async function sendOtp(phoneNumber: string): Promise<void> {
   try {
-    confirmationResult = await auth().signInWithPhoneNumber(phoneNumber);
+    confirmationResult = await signInWithPhoneNumber(firebaseAuth, phoneNumber);
   } catch (error: any) {
     confirmationResult = null;
 
@@ -49,7 +59,7 @@ export async function verifyOtp(otpCode: string): Promise<string> {
     if (!credential) {
       throw new Error('Failed to verify OTP. Please try again.');
     }
-    const idToken = await credential.user.getIdToken();
+    const idToken = await getIdToken(credential.user);
     confirmationResult = null;
     return idToken;
   } catch (error: any) {
@@ -68,6 +78,10 @@ GoogleSignin.configure({
   webClientId: GOOGLE_WEB_CLIENT_ID,
 });
 
+export async function signOutAuth(): Promise<void> {
+  await Promise.allSettled([GoogleSignin.signOut(), signOut(firebaseAuth)]);
+}
+
 export async function signInWithGoogle(): Promise<string> {
   try {
     await GoogleSignin.hasPlayServices();
@@ -80,9 +94,17 @@ export async function signInWithGoogle(): Promise<string> {
       throw new Error('Google sign-in failed. Please try again.');
     }
 
-    const googleCredential = auth.GoogleAuthProvider.credential(response.data.idToken);
-    const userCredential = await auth().signInWithCredential(googleCredential);
-    return userCredential.user.getIdToken();
+    const { accessToken } = await GoogleSignin.getTokens();
+    if (!accessToken) {
+      throw new Error('Google sign-in failed: missing access token. Please try again.');
+    }
+
+    const googleCredential = GoogleAuthProvider.credential(
+      response.data.idToken,
+      accessToken
+    );
+    const userCredential = await signInWithCredential(firebaseAuth, googleCredential);
+    return getIdToken(userCredential.user);
   } catch (error: any) {
     if (error?.message === GOOGLE_SIGN_IN_CANCELLED) {
       throw error;

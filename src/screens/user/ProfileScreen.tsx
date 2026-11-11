@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
@@ -7,17 +7,21 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { useAuthStore } from '../../store/useAuthStore';
+import { signOutAuth } from '../../services/authService';
 import { useUserProfile, useUpdateProfile, useAddAddress, useUpdateAddress, useDeleteAddress } from '../../hooks/useUserProfile';
 import { useBookings } from '../../hooks/useBookings';
 import { Loader } from '../../components/common/Loader';
 import { EmptyState } from '../../components/common/EmptyState';
 import { MenuItem } from '../../components/common/MenuItem';
 import { Button } from '../../components/common/Button';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { SectionHeader } from '../../components/common/SectionHeader';
 import { ProfileInfoCard } from '../../components/ProfileInfoCard';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { AvatarPickerModal } from '../../components/AvatarPickerModal';
 import { AddressManagerModal } from '../../components/AddressManagerModal';
 import { PastServiceCard } from '../../components/PastServiceCard';
+import type { IconName } from '../../components/common/Icon';
 import type { UserTabParamList, RootStackParamList } from '../../navigation/types';
 import type { ApiResponse, Address, Booking, PaginatedResponse, User } from '../../types';
 
@@ -26,11 +30,19 @@ type ProfileNavProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>
 >;
 
-const supportOptions = [
-  { icon: '🛟', label: 'Help Centre', description: 'Guides and troubleshooting' },
-  { icon: '⚠️', label: 'Raise Complaint', description: 'Report an issue with a booking' },
-  { icon: '💬', label: 'Contact Support', description: 'Chat with our support team' },
-  { icon: '❓', label: 'FAQs', description: 'Frequently asked questions' },
+const supportOptions: { icon: IconName; label: string; description: string }[] = [
+  { icon: 'message', label: 'Help Centre', description: 'Guides and troubleshooting' },
+  { icon: 'alert', label: 'Raise Complaint', description: 'Report an issue with a booking' },
+  { icon: 'message', label: 'Contact Support', description: 'Chat with our support team' },
+  { icon: 'search', label: 'FAQs', description: 'Frequently asked questions' },
+];
+
+const accountOptions: { icon: IconName; label: string; description: string; action: string }[] = [
+  { icon: 'user', label: 'Personal Information', description: 'Update your name and email', action: 'edit' },
+  { icon: 'bell', label: 'Notification Inbox', description: 'Manage your alerts', action: 'notifications' },
+  { icon: 'pin', label: 'Saved Addresses', description: 'Manage your service locations', action: 'addresses' },
+  { icon: 'settings', label: 'Privacy & Security', description: 'Account and data safety', action: 'privacy' },
+  { icon: 'grid', label: 'Terms & Conditions', description: 'Read our terms and policies', action: 'terms' },
 ];
 
 export function ProfileScreen() {
@@ -128,20 +140,48 @@ export function ProfileScreen() {
   const handleLogout = useCallback(() => {
     Alert.alert('Logout', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: logout },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await signOutAuth();
+          logout();
+        },
+      },
     ]);
   }, [logout]);
+
+  const handleExitGuest = useCallback(async () => {
+    await signOutAuth();
+    logout();
+  }, [logout]);
+
+  const handleAccountOption = useCallback(
+    (action: string, label: string) => {
+      if (action === 'edit') {
+        setShowEditProfile(true);
+      } else if (action === 'notifications') {
+        navigation.navigate('Notifications');
+      } else if (action === 'addresses') {
+        setShowAddressManager(true);
+      } else {
+        comingSoon(label);
+      }
+    },
+    [comingSoon, navigation],
+  );
 
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>My Profile</Text>
-          </View>
+          <ScreenHeader title="My profile" />
           <EmptyState
+            icon="user"
             title="Sign in to view your profile"
-            message="Log in to manage your personal information, saved addresses, and past services."
+            message="You're browsing as a guest. Log in to manage your personal information, saved addresses, and past services."
+            actionLabel="Sign In"
+            onAction={handleExitGuest}
           />
         </View>
       </SafeAreaView>
@@ -159,9 +199,7 @@ export function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Profile</Text>
-        </View>
+        <ScreenHeader title="My profile" subtitle={user?.phone} />
 
         <ProfileInfoCard
           user={user!}
@@ -188,12 +226,11 @@ export function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Past Services</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Bookings')}>
-              <Text style={styles.seeAll}>View All</Text>
-            </TouchableOpacity>
-          </View>
+          <SectionHeader
+            title="Past services"
+            actionLabel="View all"
+            onAction={() => navigation.navigate('Bookings')}
+          />
           {pastServices.length > 0 ? (
             <View style={styles.pastServices}>
               {pastServices.map((booking) => (
@@ -207,46 +244,29 @@ export function ProfileScreen() {
               ))}
             </View>
           ) : (
-            <Text style={styles.emptyText}>No past services yet</Text>
+            <View style={styles.emptyPast}>
+              <Text style={styles.emptyText}>No past services yet</Text>
+            </View>
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Settings</Text>
+          <Text style={styles.sectionTitle}>Account settings</Text>
           <View style={styles.sectionCard}>
-            <MenuItem
-              icon="👤"
-              label="Personal Information"
-              description="Update your name and email"
-              onPress={() => setShowEditProfile(true)}
-            />
-            <MenuItem
-              icon="🔔"
-              label="Notification Inbox"
-              description="Manage your alerts"
-              onPress={() => navigation.navigate('Notifications')}
-            />
-            <MenuItem
-              icon="📍"
-              label="Saved Addresses"
-              description={`${addresses.length} address${addresses.length === 1 ? '' : 'es'} saved`}
-              onPress={() => setShowAddressManager(true)}
-            />
-            <MenuItem
-              icon="🔒"
-              label="Privacy & Security"
-              description="Account and data safety"
-              onPress={() => comingSoon('Privacy & Security')}
-            />
-            <MenuItem
-              icon="📄"
-              label="Terms & Conditions"
-              description="Read our terms and policies"
-              onPress={() => comingSoon('Terms & Conditions')}
-              last
-            />
+            {accountOptions.map((option, index) => (
+              <MenuItem
+                key={option.label}
+                icon={option.icon}
+                label={option.label}
+                description={option.description}
+                onPress={() => handleAccountOption(option.action, option.label)}
+                last={index === accountOptions.length - 1}
+              />
+            ))}
           </View>
-          <Button title="Logout" variant="danger" onPress={handleLogout} />
+          <View style={styles.logoutButton}>
+            <Button title="Logout" variant="danger" onPress={handleLogout} />
+          </View>
         </View>
 
         <View style={styles.bottomSpace} />
@@ -296,52 +316,41 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing.xxl,
   },
-  header: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  headerTitle: {
-    ...typography.h1,
-    color: colors.textPrimary,
-  },
   section: {
     marginTop: spacing.xl,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: spacing.xl,
-    marginBottom: spacing.sm,
   },
   sectionTitle: {
     ...typography.h3,
     color: colors.textPrimary,
-    paddingHorizontal: spacing.xl,
     marginBottom: spacing.sm,
-  },
-  seeAll: {
-    ...typography.body,
-    color: colors.textLink,
-    fontWeight: '600',
   },
   sectionCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
-    marginHorizontal: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...shadows.sm,
   },
   pastServices: {
-    paddingHorizontal: spacing.xl,
     gap: spacing.sm,
+  },
+  emptyPast: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   emptyText: {
     ...typography.body,
     color: colors.textTertiary,
-    paddingHorizontal: spacing.xl,
+  },
+  logoutButton: {
+    marginTop: spacing.md,
   },
   bottomSpace: {
     height: spacing.xxl,
