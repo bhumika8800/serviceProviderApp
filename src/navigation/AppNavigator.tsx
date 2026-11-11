@@ -10,7 +10,7 @@ import { BookingScreen } from '../screens/user/BookingScreen';
 import { NotificationsScreen } from '../screens/user/NotificationsScreen';
 import { ClientDetailScreen } from '../screens/admin/ClientDetailScreen';
 import { CompleteProfileScreen } from '../screens/auth/CompleteProfileScreen';
-import { colors } from '../utils/constants';
+import { colors, fonts } from '../utils/constants';
 import { useAuthStore } from '../store/useAuthStore';
 import type { RootStackParamList } from './types';
 
@@ -29,10 +29,17 @@ export function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: colors.white },
-          headerTitleStyle: { color: colors.textPrimary, fontWeight: '600', fontSize: 18 },
+          headerStyle: { backgroundColor: colors.surface },
+          headerTitleStyle: {
+            color: colors.textPrimary,
+            fontFamily: fonts.displaySemiBold,
+            fontWeight: '600',
+            fontSize: 18,
+          },
           headerTintColor: colors.primary,
           headerShadowVisible: false,
+          headerBackTitle: '',
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
         {hasAccess ? (

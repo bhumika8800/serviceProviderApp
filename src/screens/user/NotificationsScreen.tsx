@@ -1,19 +1,22 @@
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, typography } from '../../utils/constants';
+import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { Loader } from '../../components/common/Loader';
 import { EmptyState } from '../../components/common/EmptyState';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { Icon } from '../../components/common/Icon';
+import type { IconName } from '../../components/common/Icon';
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '../../hooks/useNotifications';
 import { formatDate } from '../../utils/formatters';
 import type { NotificationsPayload } from '../../services/notificationService';
 import type { Notification } from '../../types';
 
-const typeIcons: Record<Notification['type'], string> = {
-  booking: '📅',
-  payment: '💳',
-  complaint: '⚠️',
-  promotion: '🎉',
-  system: '🔔',
+const typeIcons: Record<Notification['type'], IconName> = {
+  booking: 'calendar',
+  payment: 'card',
+  complaint: 'alert',
+  promotion: 'sparkles',
+  system: 'bell',
 };
 
 export function NotificationsScreen() {
@@ -33,19 +36,23 @@ export function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        {unreadCount > 0 && (
-          <TouchableOpacity onPress={() => markAllRead.mutate()}>
-            <Text style={styles.markAll}>Mark all read</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <ScreenHeader
+        title="Notifications"
+        subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up'}
+        right={
+          unreadCount > 0 ? (
+            <TouchableOpacity onPress={() => markAllRead.mutate()} activeOpacity={0.7}>
+              <Text style={styles.markAll}>Mark all read</Text>
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <Loader fullScreen />
       ) : notifications.length === 0 ? (
         <EmptyState
+          icon="bell"
           title="No notifications yet"
           message="You'll see booking updates, payment confirmations, and offers here."
         />
@@ -55,29 +62,36 @@ export function NotificationsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.card, !item.isRead && styles.cardUnread]}
-              onPress={() => handlePress(item)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.iconContainer}>
-                <Text style={styles.icon}>{typeIcons[item.type] ?? '🔔'}</Text>
-              </View>
-              <View style={styles.content}>
-                <View style={styles.titleRow}>
-                  <Text style={styles.title} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  {!item.isRead && <View style={styles.unreadDot} />}
+          renderItem={({ item }) => {
+            const unread = !item.isRead;
+            return (
+              <TouchableOpacity
+                style={[styles.card, unread && styles.cardUnread]}
+                onPress={() => handlePress(item)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.iconContainer, unread && styles.iconContainerUnread]}>
+                  <Icon
+                    name={typeIcons[item.type] ?? 'bell'}
+                    size={20}
+                    color={unread ? colors.primary : colors.textSecondary}
+                  />
                 </View>
-                <Text style={styles.message} numberOfLines={2}>
-                  {item.message}
-                </Text>
-                <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+                <View style={styles.content}>
+                  <View style={styles.titleRow}>
+                    <Text style={[styles.title, unread && styles.titleUnread]} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    {unread && <View style={styles.unreadDot} />}
+                  </View>
+                  <Text style={styles.message} numberOfLines={2}>
+                    {item.message}
+                  </Text>
+                  <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
     </SafeAreaView>
@@ -89,22 +103,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  headerTitle: {
-    ...typography.h1,
-    color: colors.textPrimary,
-  },
   markAll: {
-    ...typography.body,
-    color: colors.textLink,
-    fontWeight: '600',
+    ...typography.bodySmall,
+    color: colors.primary,
+    fontWeight: '700',
   },
   listContent: {
     paddingHorizontal: spacing.xl,
@@ -116,26 +118,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.sm,
   },
   cardUnread: {
     backgroundColor: colors.primaryBg,
+    borderColor: colors.primaryBg,
   },
   iconContainer: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm,
   },
-  icon: {
-    fontSize: 20,
+  iconContainerUnread: {
+    backgroundColor: colors.surface,
   },
   content: {
     flex: 1,
@@ -148,6 +149,9 @@ const styles = StyleSheet.create({
     ...typography.h4,
     color: colors.textPrimary,
     flex: 1,
+  },
+  titleUnread: {
+    color: colors.primaryDark,
   },
   unreadDot: {
     width: 8,

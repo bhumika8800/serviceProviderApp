@@ -6,13 +6,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, typography } from '../../utils/constants';
+import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { Icon } from '../../components/common/Icon';
 import {
   GOOGLE_SIGN_IN_CANCELLED,
   sendOtp,
@@ -107,75 +110,101 @@ export function LoginScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.header}>
-          <Text style={styles.appName}>ServiceProvider</Text>
-          <Text style={styles.subtitle}>
-            Log in with your phone number to get started
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.phoneRow}>
-            <View style={styles.countryCode}>
-              <Text style={styles.countryCodeText}>+91</Text>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.brandRow}>
+            <View style={styles.brandMark}>
+              <Icon name="sparkles" size={20} color={colors.textWhite} />
             </View>
-            <View style={styles.phoneInput}>
-              <Input
-                value={phone}
-                onChangeText={handlePhoneChange}
-                placeholder="Enter phone number"
-                keyboardType="phone-pad"
-                maxLength={10}
-                error={error}
-                autoFocus
-                autoComplete="tel"
-                textContentType="telephoneNumber"
-                returnKeyType="done"
-                onSubmitEditing={handleSendOtp}
-                editable={!isBusy}
-              />
+            <Text style={styles.brandName}>ServiceProvider</Text>
+          </View>
+
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.subtitle}>
+              Sign in to book trusted home services in minutes.
+            </Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Continue with mobile</Text>
+            <Text style={styles.cardSubtitle}>
+              We'll text you a 6-digit verification code.
+            </Text>
+
+            <View style={styles.phoneRow}>
+              <View style={styles.countryCode}>
+                <Text style={styles.countryCodeText}>+91</Text>
+              </View>
+              <View style={styles.phoneInput}>
+                <Input
+                  value={phone}
+                  onChangeText={handlePhoneChange}
+                  placeholder="Phone number"
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                  error={error}
+                  autoFocus
+                  autoComplete="tel"
+                  textContentType="telephoneNumber"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSendOtp}
+                  editable={!isBusy}
+                />
+              </View>
+            </View>
+
+            <Button
+              title="Send OTP"
+              onPress={handleSendOtp}
+              loading={isSending}
+              disabled={phone.length < 10 || isGoogleLoading}
+            />
+
+            <View style={styles.secureRow}>
+              <Icon name="check" size={13} color={colors.success} strokeWidth={2.4} />
+              <Text style={styles.secureText}>Your number stays private and secure</Text>
             </View>
           </View>
 
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           <Button
-            title="Send OTP"
-            onPress={handleSendOtp}
-            loading={isSending}
-            disabled={phone.length < 10 || isGoogleLoading}
+            title="Sign in with Google"
+            onPress={handleGoogleSignIn}
+            variant="outline"
+            loading={isGoogleLoading}
+            disabled={isSending}
           />
-        </View>
 
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or continue with</Text>
-          <View style={styles.dividerLine} />
-        </View>
+          <TouchableOpacity
+            style={styles.guestButton}
+            onPress={handleGuestSignIn}
+            disabled={isBusy}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.guestText}>Continue as guest</Text>
+            <Icon name="chevron-right" size={14} color={colors.primary} strokeWidth={2.2} />
+          </TouchableOpacity>
 
-        <Button
-          title="Sign in with Google"
-          onPress={handleGoogleSignIn}
-          variant="outline"
-          loading={isGoogleLoading}
-          disabled={isSending}
-        />
-
-        <Button
-          title="Sign in as Guest"
-          onPress={handleGuestSignIn}
-          variant="ghost"
-          disabled={isBusy}
-        />
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            By continuing, you agree to our{' '}
-            <Text style={styles.link}>Terms of Service</Text> and{' '}
-            <Text style={styles.link}>Privacy Policy</Text>
-          </Text>
-        </View>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              By continuing, you agree to our{' '}
+              <Text style={styles.link}>Terms of Service</Text> and{' '}
+              <Text style={styles.link}>Privacy Policy</Text>
+            </Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -186,27 +215,61 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  container: {
+  flex: {
     flex: 1,
+  },
+  container: {
+    flexGrow: 1,
     paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
     justifyContent: 'center',
   },
-  header: {
+  brandRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xxxl,
+    gap: spacing.xs,
+    marginBottom: spacing.xxl,
   },
-  appName: {
+  brandMark: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandName: {
+    ...typography.h3,
+    color: colors.textPrimary,
+  },
+  header: {
+    marginBottom: spacing.lg,
+  },
+  title: {
     ...typography.h1,
-    color: colors.primary,
-    marginBottom: spacing.sm,
+    color: colors.textPrimary,
   },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'center',
+    marginTop: spacing.xs,
   },
-  form: {
-    gap: spacing.lg,
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    gap: spacing.md,
+    ...shadows.md,
+  },
+  cardTitle: {
+    ...typography.h4,
+    color: colors.textPrimary,
+  },
+  cardSubtitle: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: -spacing.sm,
   },
   phoneRow: {
     flexDirection: 'row',
@@ -214,9 +277,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   countryCode: {
-    height: 48,
+    height: 52,
     width: 64,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: borderRadius.md,
@@ -226,15 +289,25 @@ const styles = StyleSheet.create({
   countryCodeText: {
     ...typography.body,
     color: colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   phoneInput: {
     flex: 1,
   },
+  secureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  secureText: {
+    ...typography.caption,
+    color: colors.textTertiary,
+  },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.xl,
+    marginVertical: spacing.lg,
   },
   dividerLine: {
     flex: 1,
@@ -246,18 +319,30 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginHorizontal: spacing.md,
   },
+  guestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: spacing.md,
+    marginTop: spacing.xs,
+  },
+  guestText: {
+    ...typography.button,
+    color: colors.primary,
+  },
   footer: {
     alignItems: 'center',
-    marginTop: spacing.xxxl,
+    marginTop: spacing.xl,
   },
   footerText: {
-    ...typography.bodySmall,
+    ...typography.caption,
     color: colors.textTertiary,
     textAlign: 'center',
     lineHeight: 18,
   },
   link: {
-    color: colors.textLink,
-    textDecorationLine: 'underline',
+    color: colors.primary,
+    fontWeight: '600',
   },
 });

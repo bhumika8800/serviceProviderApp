@@ -21,6 +21,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
+      <View style={[styles.dot, { backgroundColor: config.text }]} />
       <Text style={[styles.text, { color: config.text }]}>
         {status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
       </Text>
@@ -30,13 +31,21 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 
 const styles = StyleSheet.create({
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
+    paddingVertical: 3,
     borderRadius: borderRadius.full,
     alignSelf: 'flex-start',
   },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
   text: {
     ...typography.caption,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

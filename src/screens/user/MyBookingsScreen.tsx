@@ -11,7 +11,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
+import { useAuthStore } from '../../store/useAuthStore';
 import { BookingItem } from '../../components/BookingItem';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { EmptyState } from '../../components/common/EmptyState';
+import { Icon } from '../../components/common/Icon';
 import { useBookings, useCancelBooking } from '../../hooks/useBookings';
 import type { UserTabParamList } from '../../navigation/types';
 import type { Booking, PaginatedResponse } from '../../types';
@@ -25,6 +29,8 @@ const historyStatuses: Booking['status'][] = ['completed', 'cancelled'];
 
 export function MyBookingsScreen() {
   const navigation = useNavigation<BookingsNavProp>();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const logout = useAuthStore((state) => state.logout);
   const [activeTab, setActiveTab] = useState<TabKey>('active');
 
   const { data, isLoading } = useBookings();
@@ -81,16 +87,52 @@ export function MyBookingsScreen() {
     { key: 'history', label: 'History' },
   ];
 
-  if (isLoading) {
+  if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>My Bookings</Text>
+          <ScreenHeader title="My bookings" subtitle="Track your active and past services" />
+          <EmptyState
+            icon="calendar"
+            title="Sign in to see your bookings"
+            message="You're browsing as a guest. Log in to view and manage your bookings."
+            actionLabel="Sign In"
+            onAction={logout}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.container}>
+        <ScreenHeader title="My bookings" subtitle="Track your active and past services" />
+
+        <View style={styles.tabContainer}>
+          <View style={styles.tabRow}>
+            {tabs.map((tab) => {
+              const active = activeTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={[styles.tab, active && styles.tabActive]}
+                  onPress={() => setActiveTab(tab.key)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
+        </View>
+
+        {isLoading ? (
           <View style={styles.loadingContainer}>
-            {[1, 2, 3].map((i) => (
-              <View key={i} style={styles.skeletonCard}>
+            {[1, 2, 3].map((item) => (
+              <View key={item} style={styles.skeletonCard}>
                 <View style={styles.skeletonIcon} />
                 <View style={styles.skeletonContent}>
                   <View style={styles.skeletonLine} />
@@ -100,73 +142,37 @@ export function MyBookingsScreen() {
               </View>
             ))}
           </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Bookings</Text>
-        </View>
-
-        <View style={styles.tabContainer}>
-          <View style={styles.tabRow}>
-            {tabs.map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
-                style={[
-                  styles.tab,
-                  activeTab === tab.key && styles.tabActive,
-                ]}
-                onPress={() => setActiveTab(tab.key)}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === tab.key && styles.tabTextActive,
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <FlatList
-          data={filteredBookings}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>
-                {activeTab === 'active' ? '📅' : '📋'}
-              </Text>
-              <Text style={styles.emptyTitle}>
-                {activeTab === 'active'
-                  ? 'No active bookings'
-                  : 'No booking history'}
-              </Text>
-              <Text style={styles.emptyMessage}>
-                {activeTab === 'active'
-                  ? 'Book a service to get started'
-                  : 'Your completed and cancelled bookings will appear here'}
-              </Text>
-            </View>
-          }
-        />
+        ) : (
+          <FlatList
+            data={filteredBookings}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <EmptyState
+                icon={activeTab === 'active' ? 'calendar' : 'clock'}
+                title={activeTab === 'active' ? 'No active bookings' : 'No booking history'}
+                message={
+                  activeTab === 'active'
+                    ? 'Book a service and it will show up here.'
+                    : 'Your completed and cancelled bookings will appear here.'
+                }
+                actionLabel={activeTab === 'active' ? 'Browse services' : undefined}
+                onAction={
+                  activeTab === 'active' ? () => navigation.navigate('Services') : undefined
+                }
+              />
+            }
+          />
+        )}
 
         <TouchableOpacity
           style={styles.fab}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
           onPress={() => navigation.navigate('Services')}
         >
-          <Text style={styles.fabIcon}>+</Text>
+          <Icon name="plus" size={24} color={colors.textWhite} strokeWidth={2.4} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -181,30 +187,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  headerTitle: {
-    ...typography.h1,
-    color: colors.textPrimary,
-  },
   tabContainer: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.sm,
   },
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: colors.borderLight,
-    borderRadius: borderRadius.md,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: borderRadius.full,
     padding: spacing.xxs,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   tab: {
     flex: 1,
     paddingVertical: spacing.xs,
     alignItems: 'center',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.full,
   },
   tabActive: {
     backgroundColor: colors.surface,
@@ -218,9 +217,10 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   listContent: {
+    flexGrow: 1,
     padding: spacing.xl,
     paddingTop: spacing.sm,
-    paddingBottom: 80,
+    paddingBottom: 90,
     gap: spacing.md,
   },
   loadingContainer: {
@@ -232,13 +232,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    ...shadows.md,
+    ...shadows.sm,
   },
   skeletonIcon: {
     width: 48,
     height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.borderLight,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surfaceAlt,
     marginRight: spacing.sm,
   },
   skeletonContent: {
@@ -246,38 +246,18 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   skeletonLine: {
-    height: 14,
-    backgroundColor: colors.borderLight,
+    height: 12,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: borderRadius.sm,
   },
   skeletonLineShort: {
     width: '50%',
   },
   skeletonLineHalf: {
-    height: 14,
+    height: 12,
     width: '30%',
-    backgroundColor: colors.borderLight,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: borderRadius.sm,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxxl,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: spacing.md,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  emptyMessage: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: spacing.xxl,
   },
   fab: {
     position: 'absolute',
@@ -290,11 +270,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     ...shadows.lg,
-  },
-  fabIcon: {
-    fontSize: 28,
-    color: colors.textWhite,
-    lineHeight: 30,
-    fontWeight: '300',
   },
 });

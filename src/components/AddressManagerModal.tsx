@@ -13,6 +13,7 @@ import {
 import { colors, spacing, borderRadius, typography, shadows } from '../utils/constants';
 import { Input } from './common/Input';
 import { Button } from './common/Button';
+import { Icon } from './common/Icon';
 import { validatePincode } from '../utils/validators';
 import { capitalize } from '../utils/formatters';
 import type { Address } from '../types';
@@ -179,7 +180,9 @@ export function AddressManagerModal({
               >
                 {addresses.length === 0 ? (
                   <View style={styles.emptyState}>
-                    <Text style={styles.emptyIcon}>📍</Text>
+                    <View style={styles.emptyIconWrap}>
+                      <Icon name="pin" size={28} color={colors.primary} />
+                    </View>
                     <Text style={styles.emptyTitle}>No addresses saved</Text>
                     <Text style={styles.emptyMessage}>
                       Add an address to make booking faster
@@ -215,14 +218,14 @@ export function AddressManagerModal({
                           onPress={() => startEdit(address)}
                           hitSlop={8}
                         >
-                          <Text style={styles.iconButtonText}>✏️</Text>
+                          <Text style={styles.iconButtonText}>Edit</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.iconButton}
                           onPress={() => handleDelete(address)}
                           hitSlop={8}
                         >
-                          <Text style={styles.iconButtonText}>🗑️</Text>
+                          <Text style={[styles.iconButtonText, styles.deleteText]}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                       <Text style={styles.addressLine1}>
@@ -335,7 +338,9 @@ export function AddressManagerModal({
                   activeOpacity={0.8}
                 >
                   <View style={[styles.checkbox, form.isDefault && styles.checkboxActive]}>
-                    {form.isDefault && <Text style={styles.checkmark}>✓</Text>}
+                    {form.isDefault && (
+                      <Icon name="check" size={12} color={colors.textWhite} strokeWidth={2.6} />
+                    )}
                   </View>
                   <Text style={styles.checkboxLabel}>Set as default address</Text>
                 </TouchableOpacity>
@@ -449,10 +454,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconButton: {
-    marginLeft: spacing.xs,
+    marginLeft: spacing.sm,
   },
   iconButtonText: {
-    fontSize: 16,
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  deleteText: {
+    color: colors.error,
   },
   addressLine1: {
     ...typography.body,
@@ -473,8 +483,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xxl,
   },
-  emptyIcon: {
-    fontSize: 44,
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.md,
   },
   emptyTitle: {
@@ -539,11 +554,6 @@ const styles = StyleSheet.create({
   checkboxActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
-  },
-  checkmark: {
-    ...typography.caption,
-    color: colors.textWhite,
-    fontWeight: '700',
   },
   checkboxLabel: {
     ...typography.body,

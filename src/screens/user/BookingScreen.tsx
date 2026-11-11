@@ -2,12 +2,14 @@ import { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { useService } from '../../hooks/useServices';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useCreateBooking } from '../../hooks/useBookings';
 import { Loader } from '../../components/common/Loader';
 import { Button } from '../../components/common/Button';
+import { Icon } from '../../components/common/Icon';
 import type { RootStackParamList } from '../../navigation/types';
 import type { ApiResponse, Address, Service } from '../../types';
 
@@ -27,18 +29,27 @@ function dateOptions(count = 7): Date[] {
   return days;
 }
 
-function formatDay(date: Date): string {
+function formatWeekday(date: Date): string {
   const today = new Date();
-  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === today.toDateString()) {
+    return 'Today';
+  }
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
-  return date.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (date.toDateString() === tomorrow.toDateString()) {
+    return 'Tmrw';
+  }
+  return date.toLocaleDateString('en-IN', { weekday: 'short' });
+}
+
+function formatMonth(date: Date): string {
+  return date.toLocaleDateString('en-IN', { month: 'short' });
 }
 
 export function BookingScreen() {
   const navigation = useNavigation<BookingNavProp>();
   const route = useRoute<BookingRoute>();
+  const insets = useSafeAreaInsets();
   const { serviceId } = route.params;
 
   const { data: serviceData, isLoading: serviceLoading } = useService(serviceId);
@@ -98,109 +109,150 @@ export function BookingScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryName}>{service.name}</Text>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Duration</Text>
-          <Text style={styles.summaryValue}>{service.durationMins} min</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Price</Text>
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryIcon}>
+            <Icon name="sparkles" size={22} color={colors.primary} />
+          </View>
+          <View style={styles.summaryContent}>
+            <Text style={styles.summaryName} numberOfLines={1}>
+              {service.name}
+            </Text>
+            <View style={styles.summaryMeta}>
+              <Icon name="clock" size={12} color={colors.textTertiary} strokeWidth={2} />
+              <Text style={styles.summaryMetaText}>{service.durationMins} min</Text>
+            </View>
+          </View>
           <Text style={styles.summaryPrice}>₹{service.price}</Text>
         </View>
-      </View>
 
-      <Text style={styles.sectionTitle}>Select Date</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsRow}
-      >
-        {days.map((day) => {
-          const active = day.toDateString() === selectedDate.toDateString();
-          return (
-            <TouchableOpacity
-              key={day.toISOString()}
-              style={[styles.chip, active && styles.chipActive]}
-              onPress={() => setSelectedDate(day)}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                {formatDay(day)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        <Text style={styles.sectionTitle}>Select date</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.datesRow}
+        >
+          {days.map((day) => {
+            const active = day.toDateString() === selectedDate.toDateString();
+            return (
+              <TouchableOpacity
+                key={day.toISOString()}
+                style={[styles.dateCard, active && styles.dateCardActive]}
+                onPress={() => setSelectedDate(day)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.dateWeekday, active && styles.dateWeekdayActive]}>
+                  {formatWeekday(day)}
+                </Text>
+                <Text style={[styles.dateNumber, active && styles.dateNumberActive]}>
+                  {day.getDate()}
+                </Text>
+                <Text style={[styles.dateMonth, active && styles.dateMonthActive]}>
+                  {formatMonth(day)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <Text style={styles.sectionTitle}>Select time</Text>
+        <View style={styles.slotsGrid}>
+          {TIME_SLOTS.map((slot) => {
+            const active = slot === selectedSlot;
+            return (
+              <TouchableOpacity
+                key={slot}
+                style={[styles.slot, active && styles.slotActive]}
+                onPress={() => setSelectedSlot(slot)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.slotText, active && styles.slotTextActive]}>{slot}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <Text style={styles.sectionTitle}>Service address</Text>
+        {addresses.length === 0 ? (
+          <View style={styles.noAddress}>
+            <View style={styles.noAddressIcon}>
+              <Icon name="pin" size={20} color={colors.primary} />
+            </View>
+            <Text style={styles.noAddressText}>
+              No saved address. Add one from your profile to continue.
+            </Text>
+          </View>
+        ) : (
+          addresses.map((address) => {
+            const active = address.id === selectedAddressId;
+            return (
+              <TouchableOpacity
+                key={address.id}
+                style={[styles.addressCard, active && styles.addressCardActive]}
+                onPress={() => setSelectedAddressId(address.id)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.radio, active && styles.radioActive]}>
+                  {active && <View style={styles.radioDot} />}
+                </View>
+                <View style={styles.addressContent}>
+                  <View style={styles.addressTop}>
+                    <Text style={styles.addressLabel}>{address.label}</Text>
+                    {address.isDefault && <Text style={styles.defaultBadge}>Default</Text>}
+                  </View>
+                  <Text style={styles.addressText}>
+                    {address.line1}
+                    {address.line2 ? `, ${address.line2}` : ''}
+                  </Text>
+                  <Text style={styles.addressText}>
+                    {address.city}, {address.state} {address.pincode}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
 
-      <Text style={styles.sectionTitle}>Select Time</Text>
-      <View style={styles.slotsGrid}>
-        {TIME_SLOTS.map((slot) => {
-          const active = slot === selectedSlot;
-          return (
-            <TouchableOpacity
-              key={slot}
-              style={[styles.slot, active && styles.slotActive]}
-              onPress={() => setSelectedSlot(slot)}
-            >
-              <Text style={[styles.slotText, active && styles.slotTextActive]}>{slot}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      <Text style={styles.sectionTitle}>Delivery Address</Text>
-      {addresses.length === 0 ? (
-        <View style={styles.noAddress}>
-          <Text style={styles.noAddressText}>
-            No saved address. Please add one from your profile first.
-          </Text>
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(insets.bottom, spacing.md) },
+        ]}
+      >
+        <View>
+          <Text style={styles.footerLabel}>Total</Text>
+          <Text style={styles.footerPrice}>₹{service.price}</Text>
         </View>
-      ) : (
-        addresses.map((address) => {
-          const active = address.id === selectedAddressId;
-          return (
-            <TouchableOpacity
-              key={address.id}
-              style={[styles.addressCard, active && styles.addressCardActive]}
-              onPress={() => setSelectedAddressId(address.id)}
-            >
-              <View style={styles.addressTop}>
-                <Text style={styles.addressLabel}>{address.label}</Text>
-                {address.isDefault && <Text style={styles.defaultBadge}>Default</Text>}
-              </View>
-              <Text style={styles.addressText}>
-                {address.line1}
-                {address.line2 ? `, ${address.line2}` : ''}
-              </Text>
-              <Text style={styles.addressText}>
-                {address.city}, {address.state} {address.pincode}
-              </Text>
-            </TouchableOpacity>
-          );
-        })
-      )}
-
-      <View style={styles.actions}>
-        <Button
-          title="Confirm Booking"
-          loading={createBooking.isPending}
-          disabled={!selectedAddressId}
-          onPress={handleConfirm}
-        />
+        <View style={styles.footerButton}>
+          <Button
+            title="Confirm booking"
+            loading={createBooking.isPending}
+            disabled={!selectedAddressId}
+            onPress={handleConfirm}
+          />
+        </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.background,
   },
+  container: {
+    flex: 1,
+  },
   content: {
     padding: spacing.xl,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 130,
   },
   center: {
     flex: 1,
@@ -213,65 +265,92 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    ...shadows.md,
-    marginBottom: spacing.lg,
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  summaryIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  summaryContent: {
+    flex: 1,
+    marginRight: spacing.sm,
   },
   summaryName: {
-    ...typography.h3,
+    ...typography.h4,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
   },
-  summaryRow: {
+  summaryMeta: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.xxs,
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
   },
-  summaryLabel: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  summaryValue: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
+  summaryMetaText: {
+    ...typography.caption,
+    color: colors.textTertiary,
   },
   summaryPrice: {
-    ...typography.h4,
+    ...typography.h3,
     color: colors.primary,
-    fontWeight: '700',
   },
   sectionTitle: {
     ...typography.h4,
     color: colors.textPrimary,
-    marginTop: spacing.md,
+    marginTop: spacing.xl,
     marginBottom: spacing.sm,
   },
-  chipsRow: {
+  datesRow: {
     gap: spacing.xs,
-    paddingBottom: spacing.xs,
+    paddingRight: spacing.xl,
   },
-  chip: {
-    paddingHorizontal: spacing.md,
+  dateCard: {
+    width: 62,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    alignItems: 'center',
   },
-  chipActive: {
+  dateCardActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+    ...shadows.sm,
   },
-  chipText: {
-    ...typography.bodySmall,
+  dateWeekday: {
+    ...typography.caption,
     color: colors.textSecondary,
     fontWeight: '600',
   },
-  chipTextActive: {
+  dateWeekdayActive: {
+    color: 'rgba(255,255,255,0.85)',
+  },
+  dateNumber: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    marginVertical: 2,
+  },
+  dateNumberActive: {
     color: colors.textWhite,
+  },
+  dateMonth: {
+    ...typography.caption,
+    color: colors.textTertiary,
+  },
+  dateMonthActive: {
+    color: 'rgba(255,255,255,0.85)',
   },
   slotsGrid: {
     flexDirection: 'row',
@@ -279,7 +358,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   slot: {
-    width: '30%',
+    width: '31.5%',
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     backgroundColor: colors.surface,
@@ -288,7 +367,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   slotActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryBg,
     borderColor: colors.primary,
   },
   slotText: {
@@ -297,21 +376,38 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   slotTextActive: {
-    color: colors.textWhite,
+    color: colors.primary,
+    fontWeight: '700',
   },
   noAddress: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     padding: spacing.md,
-    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  noAddressIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   noAddressText: {
-    ...typography.body,
+    ...typography.bodySmall,
     color: colors.textSecondary,
+    flex: 1,
   },
   addressCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     padding: spacing.md,
     borderWidth: 1.5,
     borderColor: colors.border,
@@ -321,11 +417,33 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.primaryBg,
   },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  radioActive: {
+    borderColor: colors.primary,
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+  },
+  addressContent: {
+    flex: 1,
+  },
   addressTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xxs,
+    justifyContent: 'space-between',
+    marginBottom: 2,
   },
   addressLabel: {
     ...typography.bodySmall,
@@ -336,13 +454,38 @@ const styles = StyleSheet.create({
   defaultBadge: {
     ...typography.caption,
     color: colors.success,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   addressText: {
     ...typography.bodySmall,
     color: colors.textSecondary,
   },
-  actions: {
-    marginTop: spacing.xl,
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    ...shadows.lg,
+  },
+  footerLabel: {
+    ...typography.caption,
+    color: colors.textTertiary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  footerPrice: {
+    ...typography.h3,
+    color: colors.textPrimary,
+  },
+  footerButton: {
+    width: 190,
   },
 });

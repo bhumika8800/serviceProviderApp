@@ -1,17 +1,25 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '../../utils/constants';
+import { colors, spacing, borderRadius, typography } from '../../utils/constants';
 import { Button } from './Button';
+import { Icon } from './Icon';
+import type { IconName } from './Icon';
 
 interface EmptyStateProps {
   title: string;
   message?: string;
   actionLabel?: string;
   onAction?: () => void;
+  icon?: IconName;
 }
 
-export function EmptyState({ title, message, actionLabel, onAction }: EmptyStateProps) {
+export function EmptyState({ title, message, actionLabel, onAction, icon }: EmptyStateProps) {
   return (
     <View style={styles.container}>
+      {icon ? (
+        <View style={styles.iconWrap}>
+          <Icon name={icon} size={30} color={colors.primary} />
+        </View>
+      ) : null}
       <Text style={styles.title}>{title}</Text>
       {message && <Text style={styles.message}>{message}</Text>}
       {actionLabel && onAction && (
@@ -27,6 +35,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xxl,
+  },
+  iconWrap: {
+    width: 76,
+    height: 76,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
   },
   title: {
     ...typography.h3,

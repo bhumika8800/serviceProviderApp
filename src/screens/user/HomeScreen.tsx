@@ -4,77 +4,93 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { ServiceCard } from '../../components/ServiceCard';
-import { useServices } from '../../hooks/useServices';
-import type { RootStackParamList } from '../../navigation/types';
-import type { ApiResponse, Service } from '../../types';
+import { Avatar } from '../../components/common/Avatar';
+import { Icon } from '../../components/common/Icon';
+import type { IconName } from '../../components/common/Icon';
+import { SearchBar } from '../../components/common/SearchBar';
+import { SectionHeader } from '../../components/common/SectionHeader';
+import { useCategories, useServices } from '../../hooks/useServices';
+import { useAuthStore } from '../../store/useAuthStore';
+import type { UserTabParamList, RootStackParamList } from '../../navigation/types';
+import type { ApiResponse, Category, Service } from '../../types';
 
-type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
+type HomeNavProp = CompositeNavigationProp<
+  BottomTabNavigationProp<UserTabParamList, 'Home'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
-const steps = [
-  {
-    title: 'Select Service',
-    description: 'Browse through our wide range of professional home services and choose what you need',
-    icon: '📋',
-  },
-  {
-    title: 'Choose Date & Time',
-    description: 'Pick a convenient date and time slot that works best for your schedule',
-    icon: '📅',
-  },
-  {
-    title: 'Confirm Booking',
-    description: 'Review your booking details and confirm with a single tap',
-    icon: '✅',
-  },
-  {
-    title: 'Service Completion',
-    description: 'Get your service done by verified professionals with quality assurance',
-    icon: '🏆',
-  },
+const fallbackCategories = ['Cleaning', 'Repairs', 'Beauty', 'Appliances', 'Painting', 'More'];
+
+const trustStats = [
+  { value: '4.8', label: 'Avg rating' },
+  { value: '10k+', label: 'Bookings' },
+  { value: '100%', label: 'Verified' },
 ];
 
-const benefits = [
-  {
-    title: 'Trusted Professionals',
-    description: 'All service providers are verified, background-checked, and trained',
-    icon: '🛡️',
-    color: colors.primaryBg,
-    iconBg: colors.primary,
-  },
-  {
-    title: 'Affordable Pricing',
-    description: 'Transparent pricing with no hidden charges. Pay only for what you need',
-    icon: '💰',
-    color: colors.accentBg,
-    iconBg: colors.accentDark,
-  },
-  {
-    title: 'Quality Service',
-    description: '100% satisfaction guaranteed. We stand behind every service we provide',
-    icon: '⭐',
-    color: colors.successBg,
-    iconBg: colors.success,
-  },
-  {
-    title: 'Easy Booking',
-    description: 'Book any service in just a few taps. Fast, simple, and hassle-free',
-    icon: '⚡',
-    color: colors.primaryBg,
-    iconBg: colors.primaryLight,
-  },
-];
+function categoryIcon(name: string): IconName {
+  const value = name.toLowerCase();
+  if (value.includes('clean')) {
+    return 'sparkles';
+  }
+  if (value.includes('beaut') || value.includes('salon') || value.includes('spa')) {
+    return 'star';
+  }
+  if (value.includes('paint')) {
+    return 'grid';
+  }
+  if (value.includes('appliance') || value.includes('repair') || value.includes('electric')) {
+    return 'settings';
+  }
+  return 'home';
+}
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return 'Good morning';
+  }
+  if (hour < 17) {
+    return 'Good afternoon';
+  }
+  return 'Good evening';
+}
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeNavProp>();
+  const user = useAuthStore((state) => state.user);
+
+  const { data: categoriesData } = useCategories();
   const { data: servicesData, isLoading } = useServices();
-  const response = servicesData as ApiResponse<Service[]> | undefined;
-  const services = response?.data ?? [];
+
+  const categories: Category[] =
+    (categoriesData as ApiResponse<Category[]> | undefined)?.data ?? [];
+  const services: Service[] =
+    (servicesData as ApiResponse<Service[]> | undefined)?.data ?? [];
+
+  const topCategories = categories.filter((category) => !category.parentId).slice(0, 6);
+  const displayCategories =
+    topCategories.length > 0
+      ? topCategories.map((category) => ({ id: category.id, name: category.name }))
+      : fallbackCategories.map((name) => ({ id: name, name }));
+
+  const firstName = user?.firstName?.trim();
+  const defaultAddress = user?.addresses?.find((address) => address.isDefault) ?? user?.addresses?.[0];
+  const locationLabel = defaultAddress
+    ? `${defaultAddress.label} · ${defaultAddress.city}`
+    : 'Set your location';
+
+  const handleSupport = () => {
+    Alert.alert('Support', 'Our team is available at +91 1800-123-4567.');
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -84,56 +100,128 @@ export function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Welcome to</Text>
-            <Text style={styles.brandName}>ServiceProvider</Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.greeting}>
+              {getGreeting()}
+              {firstName ? `, ${firstName}` : ''}
+            </Text>
+            <Text style={styles.headerTitle}>What do you need today?</Text>
           </View>
-          <TouchableOpacity style={styles.profileCircle}>
-            <Text style={styles.profileIcon}>👤</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('Notifications')}
+              activeOpacity={0.7}
+            >
+              <Icon name="bell" size={20} color={colors.textPrimary} />
+              <View style={styles.notificationDot} />
+            </TouchableOpacity>
+            <Avatar
+              uri={user?.avatar}
+              name={firstName ? `${firstName} ${user?.lastName ?? ''}` : 'Guest User'}
+              size={44}
+              onPress={() => navigation.navigate('Profile')}
+            />
+          </View>
         </View>
 
-        <View style={styles.promoBanner}>
+        <TouchableOpacity
+          style={styles.locationPill}
+          onPress={() => navigation.navigate('Profile')}
+          activeOpacity={0.7}
+        >
+          <Icon name="pin" size={15} color={colors.primary} />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {locationLabel}
+          </Text>
+          <Icon name="chevron-down" size={13} color={colors.textTertiary} strokeWidth={2.2} />
+        </TouchableOpacity>
+
+        <SearchBar
+          placeholder="Search for cleaning, repairs, beauty…"
+          editable={false}
+          onPress={() => navigation.navigate('Services')}
+        />
+
+        <View style={styles.promo}>
+          <View style={styles.promoBlobOne} />
+          <View style={styles.promoBlobTwo} />
           <View style={styles.promoContent}>
-            <Text style={styles.promoTag}>Special Offer</Text>
-            <Text style={styles.promoTitle}>Get 20% off</Text>
-            <Text style={styles.promoSubtitle}>on your first booking</Text>
+            <View style={styles.promoTag}>
+              <Icon name="sparkles" size={12} color={colors.accent} />
+              <Text style={styles.promoTagText}>Special offer</Text>
+            </View>
+            <Text style={styles.promoTitle}>Get 20% off your{'\n'}first booking</Text>
             <View style={styles.promoCodeRow}>
-              <Text style={styles.promoLabel}>Use code: </Text>
-              <Text style={styles.promoCode}>FIRST20</Text>
+              <Text style={styles.promoCodeLabel}>Use code</Text>
+              <View style={styles.promoCodeBadge}>
+                <Text style={styles.promoCode}>FIRST20</Text>
+              </View>
             </View>
           </View>
-          <View style={styles.promoGraphic}>
-            <Text style={styles.promoEmoji}>🏠</Text>
+          <View style={styles.promoIconWrap}>
+            <Icon name="sparkles" size={54} color="rgba(255,255,255,0.9)" strokeWidth={1.4} />
           </View>
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Featured Services</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Services' as any)}>
-              <Text style={styles.seeAll}>See All</Text>
-            </TouchableOpacity>
-          </View>
+          <SectionHeader
+            title="Categories"
+            actionLabel="See all"
+            onAction={() => navigation.navigate('Services')}
+          />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.featuredRow}
+            contentContainerStyle={styles.categoryRow}
+          >
+            {displayCategories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={styles.categoryCard}
+                onPress={() => navigation.navigate('Services')}
+                activeOpacity={0.75}
+              >
+                <View style={styles.categoryIcon}>
+                  <Icon
+                    name={categoryIcon(category.name)}
+                    size={22}
+                    color={colors.primary}
+                  />
+                </View>
+                <Text style={styles.categoryLabel} numberOfLines={2}>
+                  {category.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader
+            title="Popular services"
+            subtitle="Handpicked for your home"
+            actionLabel="See all"
+            onAction={() => navigation.navigate('Services')}
+          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.servicesRow}
           >
             {isLoading ? (
-              <View style={styles.loadingRow}>
-                {[1, 2, 3].map((i) => (
-                  <View key={i} style={styles.skeletonCard}>
-                    <View style={styles.skeletonImage} />
-                    <View style={styles.skeletonContent}>
-                      <View style={styles.skeletonLine} />
-                      <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
-                    </View>
+              [1, 2, 3].map((item) => (
+                <View key={item} style={styles.skeletonCard}>
+                  <View style={styles.skeletonImage} />
+                  <View style={styles.skeletonBody}>
+                    <View style={styles.skeletonLine} />
+                    <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+                    <View style={styles.skeletonLinePrice} />
                   </View>
-                ))}
-              </View>
+                </View>
+              ))
             ) : services.length > 0 ? (
-              services.map((service) => (
+              services.slice(0, 6).map((service) => (
                 <ServiceCard
                   key={service.id}
                   service={service}
@@ -151,91 +239,32 @@ export function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>How It Works</Text>
-          </View>
-          <Text style={styles.sectionSubtitle}>
-            Book a service in 4 easy steps
-          </Text>
-          <View style={styles.stepsGrid}>
-            {steps.map((step, index) => (
-              <View key={index} style={styles.stepCard}>
-                <View style={styles.stepIconContainer}>
-                  <Text style={styles.stepIcon}>{step.icon}</Text>
-                  <View style={styles.stepBadge}>
-                    <Text style={styles.stepBadgeText}>{index + 1}</Text>
-                  </View>
-                </View>
-                <Text style={styles.stepTitle}>{step.title}</Text>
-                <Text style={styles.stepDescription}>{step.description}</Text>
+          <View style={styles.statsCard}>
+            {trustStats.map((stat, index) => (
+              <View
+                key={stat.label}
+                style={[styles.statItem, index < trustStats.length - 1 && styles.statDivider]}
+              >
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
               </View>
             ))}
           </View>
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Why Choose Us</Text>
-          </View>
-          <View style={styles.benefitsContainer}>
-            {benefits.map((benefit, index) => (
-              <View key={index} style={[styles.benefitCard, { backgroundColor: benefit.color }]}>
-                <View style={[styles.benefitIconContainer, { backgroundColor: benefit.iconBg }]}>
-                  <Text style={styles.benefitIcon}>{benefit.icon}</Text>
-                </View>
-                <View style={styles.benefitContent}>
-                  <Text style={styles.benefitTitle}>{benefit.title}</Text>
-                  <Text style={styles.benefitDescription}>{benefit.description}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Need Help?</Text>
-          </View>
-          <View style={styles.helpContainer}>
-            <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
-              <View style={[styles.helpIconContainer, { backgroundColor: colors.primaryBg }]}>
-                <Text style={styles.helpIcon}>💬</Text>
-              </View>
-              <View style={styles.helpContent}>
-                <Text style={styles.helpTitle}>Contact Support</Text>
-                <Text style={styles.helpDescription}>
-                  Get in touch with our support team
-                </Text>
-              </View>
-              <Text style={styles.helpArrow}>→</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
-              <View style={[styles.helpIconContainer, { backgroundColor: colors.accentBg }]}>
-                <Text style={styles.helpIcon}>❓</Text>
-              </View>
-              <View style={styles.helpContent}>
-                <Text style={styles.helpTitle}>FAQ</Text>
-                <Text style={styles.helpDescription}>
-                  Find answers to common questions
-                </Text>
-              </View>
-              <Text style={styles.helpArrow}>→</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.helpCard} activeOpacity={0.7}>
-              <View style={[styles.helpIconContainer, { backgroundColor: colors.successBg }]}>
-                <Text style={styles.helpIcon}>📞</Text>
-              </View>
-              <View style={styles.helpContent}>
-                <Text style={styles.helpTitle}>Customer Care</Text>
-                <Text style={styles.helpDescription}>
-                  +91 1800-123-4567
-                </Text>
-              </View>
-              <Text style={styles.helpArrow}>→</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.helpCard} onPress={handleSupport} activeOpacity={0.8}>
+            <View style={styles.helpIcon}>
+              <Icon name="message" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.helpContent}>
+              <Text style={styles.helpTitle}>Need a hand?</Text>
+              <Text style={styles.helpSubtitle}>Chat with our support team, 7am–10pm</Text>
+            </View>
+            <View style={styles.helpArrow}>
+              <Icon name="arrow-right" size={16} color={colors.primary} strokeWidth={2.2} />
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.bottomSpace} />
@@ -253,279 +282,295 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xxl,
+    paddingTop: spacing.md,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+  },
+  headerLeft: {
+    flex: 1,
+    marginRight: spacing.sm,
   },
   greeting: {
-    ...typography.body,
+    ...typography.bodySmall,
     color: colors.textSecondary,
+    fontWeight: '600',
   },
-  brandName: {
+  headerTitle: {
     ...typography.h2,
-    color: colors.primary,
-    letterSpacing: -0.5,
+    color: colors.textPrimary,
+    marginTop: 2,
   },
-  profileCircle: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  iconButton: {
     width: 44,
     height: 44,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.primaryBg,
-    justifyContent: 'center',
+    backgroundColor: colors.surface,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  profileIcon: {
-    fontSize: 20,
-  },
-  promoBanner: {
-    flexDirection: 'row',
-    marginHorizontal: spacing.xl,
-    marginBottom: spacing.xl,
+  notificationDot: {
+    position: 'absolute',
+    top: 11,
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.primary,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  locationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 5,
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+  },
+  locationText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700',
+    maxWidth: 220,
+    textTransform: 'capitalize',
+  },
+  promo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.lg,
+    padding: spacing.lg,
     borderRadius: borderRadius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    ...shadows.lg,
+    backgroundColor: colors.primary,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  promoBlobOne: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    right: -40,
+    top: -60,
+  },
+  promoBlobTwo: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    left: -30,
+    bottom: -50,
   },
   promoContent: {
     flex: 1,
   },
   promoTag: {
-    ...typography.overline,
-    color: colors.accent,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    marginBottom: spacing.xs,
+  },
+  promoTagText: {
+    ...typography.caption,
+    color: colors.textWhite,
+    fontWeight: '700',
   },
   promoTitle: {
-    ...typography.h2,
+    ...typography.h3,
     color: colors.textWhite,
-    marginTop: spacing.xxs,
-  },
-  promoSubtitle: {
-    ...typography.body,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: spacing.xxs,
+    lineHeight: 24,
   },
   promoCodeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs,
     marginTop: spacing.sm,
   },
-  promoLabel: {
-    ...typography.bodySmall,
-    color: 'rgba(255,255,255,0.7)',
+  promoCodeLabel: {
+    ...typography.caption,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  promoCodeBadge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surface,
   },
   promoCode: {
-    ...typography.bodySmall,
-    color: colors.accent,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  promoGraphic: {
-    justifyContent: 'center',
+  promoIconWrap: {
+    width: 64,
     alignItems: 'center',
-    paddingLeft: spacing.md,
-  },
-  promoEmoji: {
-    fontSize: 52,
+    justifyContent: 'center',
   },
   section: {
-    marginBottom: spacing.xl,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginTop: spacing.xl,
     paddingHorizontal: spacing.xl,
-    marginBottom: spacing.sm,
   },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-  },
-  sectionSubtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.md,
-    marginTop: -spacing.xs,
-  },
-  seeAll: {
-    ...typography.body,
-    color: colors.textLink,
-    fontWeight: '600',
-  },
-  featuredRow: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xs,
-  },
-  loadingRow: {
-    flexDirection: 'row',
+  categoryRow: {
     gap: spacing.sm,
+    paddingRight: spacing.xl,
+  },
+  categoryCard: {
+    width: 82,
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  categoryIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontWeight: '600',
+    textAlign: 'center',
+    paddingHorizontal: 4,
+  },
+  servicesRow: {
+    gap: spacing.sm,
+    paddingRight: spacing.xl,
   },
   skeletonCard: {
     width: 180,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     overflow: 'hidden',
-    ...shadows.md,
+    marginRight: spacing.sm,
+    ...shadows.sm,
   },
   skeletonImage: {
-    height: 110,
-    backgroundColor: colors.border,
+    height: 118,
+    backgroundColor: colors.surfaceAlt,
   },
-  skeletonContent: {
+  skeletonBody: {
     padding: spacing.sm,
     gap: spacing.xs,
   },
   skeletonLine: {
-    height: 14,
-    backgroundColor: colors.borderLight,
+    height: 12,
     borderRadius: borderRadius.sm,
+    backgroundColor: colors.surfaceAlt,
   },
   skeletonLineShort: {
-    width: '60%',
+    width: '70%',
+  },
+  skeletonLinePrice: {
+    height: 14,
+    width: '40%',
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surfaceAlt,
+    marginTop: spacing.xs,
   },
   emptyServices: {
-    width: 200,
-    padding: spacing.lg,
+    width: 220,
+    height: 120,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
-    ...typography.body,
+    ...typography.bodySmall,
     color: colors.textTertiary,
   },
-  stepsGrid: {
+  statsCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
-  },
-  stepCard: {
-    width: '47%',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    ...shadows.md,
+    borderRadius: borderRadius.xl,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  stepIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryBg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    position: 'relative',
-  },
-  stepIcon: {
-    fontSize: 22,
-  },
-  stepBadge: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    width: 20,
-    height: 20,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepBadgeText: {
-    ...typography.caption,
-    color: colors.textWhite,
-    fontWeight: '700',
-    fontSize: 10,
-  },
-  stepTitle: {
-    ...typography.h4,
-    color: colors.textPrimary,
-    marginBottom: spacing.xxs,
-  },
-  stepDescription: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  benefitsContainer: {
-    paddingHorizontal: spacing.xl,
-    gap: spacing.sm,
-  },
-  benefitCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-  },
-  benefitIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  benefitIcon: {
-    fontSize: 20,
-  },
-  benefitContent: {
+  statItem: {
     flex: 1,
-    marginLeft: spacing.sm,
+    alignItems: 'center',
+    gap: 2,
   },
-  benefitTitle: {
-    ...typography.h4,
-    color: colors.textPrimary,
+  statDivider: {
+    borderRightWidth: 1,
+    borderRightColor: colors.borderLight,
   },
-  benefitDescription: {
-    ...typography.bodySmall,
+  statValue: {
+    ...typography.h3,
+    color: colors.primary,
+  },
+  statLabel: {
+    ...typography.caption,
     color: colors.textSecondary,
-    marginTop: 2,
-  },
-  helpContainer: {
-    paddingHorizontal: spacing.xl,
-    gap: spacing.sm,
   },
   helpCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
     padding: spacing.md,
-    ...shadows.sm,
-  },
-  helpIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.primaryBg,
   },
   helpIcon: {
-    fontSize: 20,
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   helpContent: {
     flex: 1,
-    marginLeft: spacing.sm,
   },
   helpTitle: {
     ...typography.h4,
     color: colors.textPrimary,
   },
-  helpDescription: {
+  helpSubtitle: {
     ...typography.bodySmall,
     color: colors.textSecondary,
     marginTop: 2,
   },
   helpArrow: {
-    ...typography.h3,
-    color: colors.textTertiary,
-    marginLeft: spacing.sm,
+    width: 34,
+    height: 34,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bottomSpace: {
     height: spacing.xxl,

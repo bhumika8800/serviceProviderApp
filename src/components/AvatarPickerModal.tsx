@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { colors, spacing, borderRadius, typography } from '../utils/constants';
 import { Button } from './common/Button';
+import { Icon } from './common/Icon';
 import { avatarOptions } from '../data/mockUser';
 
 interface AvatarPickerModalProps {
@@ -56,7 +57,7 @@ export function AvatarPickerModal({
                 <Image source={{ uri: selected }} style={styles.preview} />
               ) : (
                 <View style={[styles.preview, styles.previewPlaceholder]}>
-                  <Text style={styles.previewPlaceholderText}>👤</Text>
+                  <Icon name="user" size={48} color={colors.primary} />
                 </View>
               )}
             </View>
@@ -74,7 +75,7 @@ export function AvatarPickerModal({
                     <Image source={{ uri }} style={styles.optionImage} />
                     {isSelected && (
                       <View style={styles.checkBadge}>
-                        <Text style={styles.checkText}>✓</Text>
+                        <Icon name="check" size={12} color={colors.textWhite} strokeWidth={2.6} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -151,9 +152,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  previewPlaceholderText: {
-    fontSize: 44,
-  },
   optionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -186,11 +184,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: colors.surface,
-  },
-  checkText: {
-    ...typography.caption,
-    color: colors.textWhite,
-    fontWeight: '700',
   },
   actions: {
     flexDirection: 'row',

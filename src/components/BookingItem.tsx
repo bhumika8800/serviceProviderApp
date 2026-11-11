@@ -1,6 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, typography, shadows } from '../utils/constants';
 import { StatusBadge } from './common/StatusBadge';
+import { Icon } from './common/Icon';
+import type { IconName } from './common/Icon';
 import type { Booking } from '../types';
 
 interface BookingItemProps {
@@ -10,26 +12,37 @@ interface BookingItemProps {
   onPress?: (id: string) => void;
 }
 
-export const serviceIconMap: Record<string, string> = {
-  'Basic Home Cleaning': '🧹',
-  'Deep Cleaning': '🧹',
-  'Kitchen Deep Cleaning': '🧹',
-  'Tap & Mixer Repair': '🔧',
-  'Drain Cleaning': '🔧',
-  'Water Heater Installation': '🔧',
-  'Switch & Socket Repair': '⚡',
-  'Fan Installation & Repair': '⚡',
-  'Wiring & Circuit Work': '⚡',
-  'Facial & Cleanup': '💅',
-  'Haircut & Styling': '💅',
-  'Manicure & Pedicure': '💅',
-  'AC Service & Repair': '🔨',
-  'Washing Machine Repair': '🔨',
-  'Refrigerator Service': '🔨',
-  'Interior Wall Painting': '🎨',
-  'Exterior Painting': '🎨',
-  'Texture & Wallpaper': '🎨',
-};
+export function getServiceIcon(name: string): IconName {
+  const value = name.toLowerCase();
+  if (value.includes('clean')) {
+    return 'sparkles';
+  }
+  if (
+    value.includes('beaut') ||
+    value.includes('facial') ||
+    value.includes('hair') ||
+    value.includes('manicure')
+  ) {
+    return 'star';
+  }
+  if (value.includes('paint') || value.includes('ac ') || value.includes('washing')) {
+    return 'grid';
+  }
+  if (
+    value.includes('electric') ||
+    value.includes('switch') ||
+    value.includes('fan') ||
+    value.includes('wiring') ||
+    value.includes('plumb') ||
+    value.includes('tap') ||
+    value.includes('drain') ||
+    value.includes('heater') ||
+    value.includes('repair')
+  ) {
+    return 'settings';
+  }
+  return 'sparkles';
+}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -40,20 +53,20 @@ function formatDate(dateString: string): string {
   const minutes = date.getMinutes().toString().padStart(2, '0');
   const ampm = hours >= 12 ? 'PM' : 'AM';
   const h = hours % 12 || 12;
-  return `${day}/${month}/${year} ${h}:${minutes} ${ampm}`;
+  return `${day}/${month}/${year} · ${h}:${minutes} ${ampm}`;
 }
 
 export function BookingItem({ booking, showCancel, onCancel, onPress }: BookingItemProps) {
-  const icon = serviceIconMap[booking.serviceSnapshot.name] || '📋';
+  const icon = getServiceIcon(booking.serviceSnapshot.name);
 
   return (
     <TouchableOpacity
       style={styles.card}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
       onPress={() => onPress?.(booking.id)}
     >
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>{icon}</Text>
+        <Icon name={icon} size={22} color={colors.primary} />
       </View>
       <View style={styles.content}>
         <View style={styles.topRow}>
@@ -62,17 +75,24 @@ export function BookingItem({ booking, showCancel, onCancel, onPress }: BookingI
           </Text>
           <StatusBadge status={booking.status} />
         </View>
-        <Text style={styles.bookingId}>ID: {booking.id}</Text>
-        <Text style={styles.date}>{formatDate(booking.bookingDate)}</Text>
+
+        <View style={styles.metaRow}>
+          <Icon name="calendar" size={13} color={colors.textTertiary} strokeWidth={2} />
+          <Text style={styles.date}>{formatDate(booking.bookingDate)}</Text>
+        </View>
+
         <View style={styles.bottomRow}>
           <Text style={styles.amount}>₹{booking.totalAmount}</Text>
-          {showCancel && onCancel && (
+          {showCancel && onCancel ? (
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => onCancel(booking.id)}
+              activeOpacity={0.8}
             >
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
+          ) : (
+            <Text style={styles.bookingId}>#{booking.id.slice(-6).toUpperCase()}</Text>
           )}
         </View>
       </View>
@@ -86,19 +106,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    ...shadows.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.sm,
   },
   iconContainer: {
     width: 48,
     height: 48,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.full,
     backgroundColor: colors.primaryBg,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm,
-  },
-  icon: {
-    fontSize: 22,
   },
   content: {
     flex: 1,
@@ -107,23 +126,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: spacing.xs,
     marginBottom: spacing.xxs,
   },
   serviceName: {
     ...typography.h4,
     color: colors.textPrimary,
     flex: 1,
-    marginRight: spacing.xs,
   },
-  bookingId: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginBottom: 2,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: spacing.xs,
   },
   date: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    marginBottom: spacing.xs,
   },
   bottomRow: {
     flexDirection: 'row',
@@ -135,16 +154,21 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '700',
   },
+  bookingId: {
+    ...typography.caption,
+    color: colors.textTertiary,
+    fontWeight: '600',
+  },
   cancelButton: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: colors.error,
   },
   cancelText: {
     ...typography.caption,
     color: colors.error,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

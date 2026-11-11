@@ -76,11 +76,12 @@ const styles = StyleSheet.create({
   label: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
+    marginLeft: 2,
   },
   input: {
-    height: 48,
-    backgroundColor: colors.white,
+    height: 52,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: borderRadius.md,
@@ -90,19 +91,20 @@ const styles = StyleSheet.create({
   },
   focusedInput: {
     borderColor: colors.primary,
-    borderWidth: 1.5,
+    backgroundColor: colors.surface,
   },
   errorInput: {
     borderColor: colors.error,
     backgroundColor: colors.errorBg,
   },
   disabledInput: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceAlt,
     borderColor: colors.borderLight,
     color: colors.textTertiary,
   },
   errorText: {
     ...typography.caption,
     color: colors.error,
+    marginLeft: 2,
   },
 });

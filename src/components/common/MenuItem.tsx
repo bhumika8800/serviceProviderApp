@@ -1,8 +1,10 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, typography } from '../../utils/constants';
+import { Icon } from './Icon';
+import type { IconName } from './Icon';
 
 interface MenuItemProps {
-  icon: string;
+  icon: IconName;
   label: string;
   description?: string;
   onPress: () => void;
@@ -17,13 +19,13 @@ export function MenuItem({ icon, label, description, onPress, last }: MenuItemPr
       activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>{icon}</Text>
+        <Icon name={icon} size={19} color={colors.primary} />
       </View>
       <View style={styles.content}>
         <Text style={styles.label}>{label}</Text>
         {description && <Text style={styles.description}>{description}</Text>}
       </View>
-      <Text style={styles.chevron}>›</Text>
+      <Icon name="chevron-right" size={16} color={colors.textTertiary} strokeWidth={2.2} />
     </TouchableOpacity>
   );
 }
@@ -32,6 +34,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
   },
@@ -42,14 +45,10 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.full,
     backgroundColor: colors.primaryBg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.sm,
-  },
-  icon: {
-    fontSize: 18,
   },
   content: {
     flex: 1,
@@ -62,10 +61,5 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.textSecondary,
     marginTop: 2,
-  },
-  chevron: {
-    ...typography.h3,
-    color: colors.textTertiary,
-    marginLeft: spacing.sm,
   },
 });

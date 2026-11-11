@@ -1,5 +1,6 @@
 import { TouchableOpacity, View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
 import { colors, spacing, borderRadius, typography, shadows } from '../utils/constants';
+import { Icon } from './common/Icon';
 import type { Service } from '../types';
 
 interface ServiceCardProps {
@@ -16,33 +17,40 @@ export function ServiceCard({ service, onPress, variant = 'default', style }: Se
     <TouchableOpacity
       style={[styles.card, variant === 'featured' && styles.featuredCard, style]}
       onPress={() => onPress(service.id)}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
       <View style={[styles.imageContainer, variant === 'featured' && styles.featuredImage]}>
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={styles.image} />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Text style={styles.imageIcon}>📷</Text>
+            <Icon name="sparkles" size={40} color={colors.primary} />
+          </View>
+        )}
+        {service.avgRating > 0 && (
+          <View style={styles.ratingPill}>
+            <Icon name="star" size={11} color={colors.accentDark} strokeWidth={1.5} />
+            <Text style={styles.ratingPillText}>{service.avgRating.toFixed(1)}</Text>
           </View>
         )}
       </View>
+
       <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={1}>{service.name}</Text>
-        <Text style={styles.description} numberOfLines={2}>{service.description}</Text>
+        <Text style={styles.name} numberOfLines={1}>
+          {service.name}
+        </Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {service.description}
+        </Text>
         <View style={styles.footer}>
           <Text style={styles.price}>₹{service.price}</Text>
           {service.durationMins > 0 && (
-            <Text style={styles.duration}>{service.durationMins} min</Text>
+            <View style={styles.durationRow}>
+              <Icon name="clock" size={12} color={colors.textTertiary} strokeWidth={2} />
+              <Text style={styles.duration}>{service.durationMins} min</Text>
+            </View>
           )}
         </View>
-        {service.avgRating > 0 && (
-          <View style={styles.ratingRow}>
-            <Text style={styles.star}>★</Text>
-            <Text style={styles.rating}>{service.avgRating.toFixed(1)}</Text>
-            <Text style={styles.reviewCount}>({service.reviewCount})</Text>
-          </View>
-        )}
       </View>
     </TouchableOpacity>
   );
@@ -64,7 +72,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   imageContainer: {
-    height: 110,
+    height: 118,
     backgroundColor: colors.primaryBg,
   },
   image: {
@@ -73,18 +81,31 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   featuredImage: {
-    height: 110,
-    width: 110,
-    borderTopLeftRadius: borderRadius.lg,
-    borderBottomLeftRadius: borderRadius.lg,
+    height: 118,
+    width: 118,
   },
   imagePlaceholder: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  imageIcon: {
-    fontSize: 36,
+  ratingPill: {
+    position: 'absolute',
+    top: spacing.xs,
+    right: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    ...shadows.sm,
+  },
+  ratingPillText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '700',
   },
   content: {
     padding: spacing.sm,
@@ -96,7 +117,8 @@ const styles = StyleSheet.create({
   description: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    marginTop: spacing.xxs,
+    marginTop: 2,
+    minHeight: 32,
   },
   footer: {
     flexDirection: 'row',
@@ -109,28 +131,13 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '700',
   },
+  durationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
   duration: {
     ...typography.caption,
     color: colors.textTertiary,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xxs,
-  },
-  star: {
-    color: colors.accent,
-    fontSize: 14,
-    marginRight: 2,
-  },
-  rating: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  reviewCount: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginLeft: 2,
   },
 });

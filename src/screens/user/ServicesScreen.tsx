@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +12,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { ServiceCard } from '../../components/ServiceCard';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { SearchBar } from '../../components/common/SearchBar';
+import { Chip } from '../../components/common/Chip';
+import { Icon } from '../../components/common/Icon';
 import { useCategories, useServices } from '../../hooks/useServices';
 import type { RootStackParamList } from '../../navigation/types';
 import type { ApiResponse, Category, Service } from '../../types';
@@ -21,7 +24,7 @@ type ServicesNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: screenWidth } = Dimensions.get('window');
 const HORIZONTAL_PADDING = spacing.xl;
-const CARD_GAP = spacing.sm;
+const CARD_GAP = spacing.md;
 const CARD_WIDTH = (screenWidth - HORIZONTAL_PADDING * 2 - CARD_GAP) / 2;
 
 export function ServicesScreen() {
@@ -54,143 +57,113 @@ export function ServicesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Services</Text>
-        </View>
+      <ScreenHeader title="Services" subtitle="Find the right help for your home" />
 
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search services..."
-              placeholderTextColor={colors.textTertiary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+      <View style={styles.searchContainer}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search services…"
+        />
+      </View>
+
+      <View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesRow}
+        >
+          <Chip
+            label="All"
+            active={selectedCategory === null}
+            onPress={() => setSelectedCategory(null)}
+          />
+          {categoriesLoading ? (
+            <View style={styles.loadingChips}>
+              <Text style={styles.loadingChipsText}>Loading…</Text>
+            </View>
+          ) : (
+            categories.map((category) => (
+              <Chip
+                key={category.id}
+                label={category.name}
+                active={selectedCategory === category.id}
+                onPress={() =>
+                  setSelectedCategory(selectedCategory === category.id ? null : category.id)
+                }
+              />
+            ))
+          )}
+        </ScrollView>
+      </View>
+
+      <ScrollView
+        style={styles.servicesScroll}
+        contentContainerStyle={styles.servicesContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {!servicesLoading && (
+          <Text style={styles.resultCount}>
+            {services.length} {services.length === 1 ? 'service' : 'services'} available
+          </Text>
+        )}
+
+        {servicesLoading ? (
+          <View style={styles.servicesGrid}>
+            {[1, 2, 3, 4].map((item) => (
+              <View key={item} style={[styles.skeletonCard, { width: CARD_WIDTH }]}>
+                <View style={styles.skeletonImage} />
+                <View style={styles.skeletonContent}>
+                  <View style={styles.skeletonLine} />
+                  <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+                  <View style={styles.skeletonLinePrice} />
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : services.length > 0 ? (
+          <View style={styles.servicesGrid}>
+            {services.map((service) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                onPress={(id: string) =>
+                  navigation.navigate('ServiceDetail', { serviceId: id })
+                }
+                style={styles.cardOverride}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconWrap}>
+              <Icon
+                name={searchQuery ? 'search' : 'sparkles'}
+                size={30}
+                color={colors.primary}
+              />
+            </View>
+            <Text style={styles.emptyTitle}>
+              {searchQuery ? 'No services found' : 'No services available'}
+            </Text>
+            <Text style={styles.emptyMessage}>
+              {searchQuery
+                ? 'Try adjusting your search or pick another category.'
+                : 'Check back later for new services.'}
+            </Text>
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Text style={styles.clearIcon}>✕</Text>
+              <TouchableOpacity
+                style={styles.clearSearchButton}
+                onPress={() => setSearchQuery('')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.clearSearchText}>Clear search</Text>
               </TouchableOpacity>
             )}
           </View>
-        </View>
-
-        <View style={styles.categoriesContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesRow}
-          >
-            <TouchableOpacity
-              style={[
-                styles.categoryChip,
-                selectedCategory === null && styles.categoryChipActive,
-              ]}
-              onPress={() => setSelectedCategory(null)}
-            >
-              <Text
-                style={[
-                  styles.categoryChipText,
-                  selectedCategory === null && styles.categoryChipTextActive,
-                ]}
-              >
-                All
-              </Text>
-            </TouchableOpacity>
-            {categoriesLoading ? (
-              <View style={styles.loadingChips}>
-                <Text style={styles.categoryChipText}>Loading…</Text>
-              </View>
-            ) : (
-              categories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  style={[
-                    styles.categoryChip,
-                    selectedCategory === category.id && styles.categoryChipActive,
-                  ]}
-                  onPress={() =>
-                    setSelectedCategory(
-                      selectedCategory === category.id ? null : category.id,
-                    )
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.categoryChipText,
-                      selectedCategory === category.id && styles.categoryChipTextActive,
-                    ]}
-                  >
-                    {category.name}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
-        </View>
-
-        <ScrollView
-          style={styles.servicesScroll}
-          contentContainerStyle={styles.servicesContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {servicesLoading ? (
-            <View style={styles.loadingGrid}>
-              {[1, 2, 3, 4].map((i) => (
-                <View key={i} style={[styles.skeletonCard, { width: CARD_WIDTH }]}>
-                  <View style={styles.skeletonImage} />
-                  <View style={styles.skeletonContent}>
-                    <View style={styles.skeletonLine} />
-                    <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : services.length > 0 ? (
-            <View style={styles.servicesGrid}>
-              {services.map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  onPress={(id: string) =>
-                    navigation.navigate('ServiceDetail', { serviceId: id })
-                  }
-                  style={styles.cardOverride}
-                />
-              ))}
-            </View>
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>
-                {searchQuery ? '🔍' : '📋'}
-              </Text>
-              <Text style={styles.emptyTitle}>
-                {searchQuery
-                  ? 'No services found'
-                  : 'No services available'}
-              </Text>
-              <Text style={styles.emptyMessage}>
-                {searchQuery
-                  ? 'Try adjusting your search or filter'
-                  : 'Check back later for new services'}
-              </Text>
-              {searchQuery.length > 0 && (
-                <TouchableOpacity
-                  style={styles.clearSearchButton}
-                  onPress={() => setSearchQuery('')}
-                >
-                  <Text style={styles.clearSearchText}>Clear Search</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-          <View style={styles.bottomSpace} />
-        </ScrollView>
-      </View>
+        )}
+        <View style={styles.bottomSpace} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -200,132 +173,86 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  headerTitle: {
-    ...typography.h1,
-    color: colors.textPrimary,
-  },
-  cardOverride: {
-    width: CARD_WIDTH,
-    marginRight: 0,
-  },
   searchContainer: {
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.sm,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    height: 48,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: spacing.xs,
-  },
-  searchInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-    paddingVertical: 0,
-  },
-  clearIcon: {
-    fontSize: 14,
-    color: colors.textTertiary,
-    paddingLeft: spacing.xs,
-  },
-  categoriesContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: spacing.md,
   },
   categoriesRow: {
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.sm,
+    paddingBottom: spacing.md,
     gap: spacing.xs,
   },
   loadingChips: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
   },
-  loadingGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: CARD_GAP,
-  },
-  skeletonCard: {
-    height: 210,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    ...shadows.md,
-  },
-  skeletonImage: {
-    height: 110,
-    backgroundColor: colors.border,
-  },
-  skeletonContent: {
-    padding: spacing.sm,
-    gap: spacing.xs,
-  },
-  skeletonLine: {
-    height: 14,
-    backgroundColor: colors.borderLight,
-    borderRadius: borderRadius.sm,
-  },
-  skeletonLineShort: {
-    width: '60%',
-  },
-  categoryChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  categoryChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  categoryChipText: {
+  loadingChipsText: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  categoryChipTextActive: {
-    color: colors.textWhite,
+    color: colors.textTertiary,
   },
   servicesScroll: {
     flex: 1,
   },
   servicesContent: {
-    padding: spacing.xl,
-    paddingBottom: 0,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
+  resultCount: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  cardOverride: {
+    width: CARD_WIDTH,
+    marginRight: 0,
+    marginBottom: 0,
   },
   servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: CARD_GAP,
   },
+  skeletonCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  skeletonImage: {
+    height: 118,
+    backgroundColor: colors.surfaceAlt,
+  },
+  skeletonContent: {
+    padding: spacing.sm,
+    gap: spacing.xs,
+  },
+  skeletonLine: {
+    height: 12,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surfaceAlt,
+  },
+  skeletonLineShort: {
+    width: '70%',
+  },
+  skeletonLinePrice: {
+    height: 14,
+    width: '40%',
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surfaceAlt,
+    marginTop: spacing.xs,
+  },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
+    paddingHorizontal: spacing.lg,
   },
-  emptyIcon: {
-    fontSize: 48,
+  emptyIconWrap: {
+    width: 76,
+    height: 76,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.md,
   },
   emptyTitle: {
@@ -343,15 +270,14 @@ const styles = StyleSheet.create({
   clearSearchButton: {
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
   },
   clearSearchText: {
     ...typography.button,
-    color: colors.primary,
+    color: colors.textWhite,
   },
   bottomSpace: {
-    height: spacing.xxl,
+    height: spacing.xl,
   },
 });

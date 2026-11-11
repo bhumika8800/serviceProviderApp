@@ -9,9 +9,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '../../utils/constants';
+import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { Icon } from '../../components/common/Icon';
 import { completeProfile } from '../../services/userService';
 import { useAuthStore } from '../../store/useAuthStore';
 import { validateEmail, validatePincode } from '../../utils/validators';
@@ -92,7 +93,7 @@ export function CompleteProfileScreen() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -100,6 +101,10 @@ export function CompleteProfileScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
+            <View style={styles.iconBadge}>
+              <Icon name="user" size={26} color={colors.primary} />
+            </View>
+            <Text style={styles.overline}>Almost there</Text>
             <Text style={styles.title}>Complete your profile</Text>
             <Text style={styles.subtitle}>
               Add a few details so we can personalise your experience{'\n'}
@@ -107,72 +112,99 @@ export function CompleteProfileScreen() {
             </Text>
           </View>
 
-          <View style={styles.form}>
-            <Input
-              label="First Name"
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="e.g. Aarav"
-              autoCapitalize="words"
-            />
-            <Input
-              label="Last Name"
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="e.g. Sharma"
-              autoCapitalize="words"
-            />
-            <Input
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            <Text style={styles.sectionLabel}>Home Address (optional)</Text>
-            <Input
-              label="Address Line 1"
-              value={line1}
-              onChangeText={setLine1}
-              placeholder="House no, street"
-              autoCapitalize="words"
-            />
-            <Input
-              label="Address Line 2 (optional)"
-              value={line2}
-              onChangeText={setLine2}
-              placeholder="Area, landmark"
-              autoCapitalize="words"
-            />
-            <Input
-              label="City"
-              value={city}
-              onChangeText={setCity}
-              placeholder="e.g. Bangalore"
-              autoCapitalize="words"
-            />
-            <Input
-              label="State"
-              value={state}
-              onChangeText={setState}
-              placeholder="e.g. Karnataka"
-              autoCapitalize="words"
-            />
-            <Input
-              label="Pincode"
-              value={pincode}
-              onChangeText={(text) => setPincode(text.replace(/[^0-9]/g, '').slice(0, 6))}
-              placeholder="6-digit pincode"
-              keyboardType="number-pad"
-              maxLength={6}
-            />
-
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-            <Button title="Save & Continue" onPress={handleSubmit} loading={isSubmitting} />
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Personal details</Text>
+              <Text style={styles.cardHint}>Required</Text>
+            </View>
+            <View style={styles.field}>
+              <Input
+                label="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="e.g. Aarav"
+                autoCapitalize="words"
+              />
+            </View>
+            <View style={styles.field}>
+              <Input
+                label="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder="e.g. Sharma"
+                autoCapitalize="words"
+              />
+            </View>
+            <View style={styles.field}>
+              <Input
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
           </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Home address</Text>
+              <Text style={styles.cardHint}>Optional</Text>
+            </View>
+            <View style={styles.field}>
+              <Input
+                label="Address Line 1"
+                value={line1}
+                onChangeText={setLine1}
+                placeholder="House no, street"
+                autoCapitalize="words"
+              />
+            </View>
+            <View style={styles.field}>
+              <Input
+                label="Address Line 2"
+                value={line2}
+                onChangeText={setLine2}
+                placeholder="Area, landmark"
+                autoCapitalize="words"
+              />
+            </View>
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <Input
+                  label="City"
+                  value={city}
+                  onChangeText={setCity}
+                  placeholder="e.g. Bangalore"
+                  autoCapitalize="words"
+                />
+              </View>
+              <View style={styles.halfField}>
+                <Input
+                  label="State"
+                  value={state}
+                  onChangeText={setState}
+                  placeholder="e.g. Karnataka"
+                  autoCapitalize="words"
+                />
+              </View>
+            </View>
+            <View style={styles.field}>
+              <Input
+                label="Pincode"
+                value={pincode}
+                onChangeText={(text) => setPincode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                placeholder="6-digit pincode"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+            </View>
+          </View>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <Button title="Save & Continue" onPress={handleSubmit} loading={isSubmitting} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -189,37 +221,79 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
+    paddingVertical: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xxxl,
+    marginBottom: spacing.lg,
+  },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  overline: {
+    ...typography.overline,
+    color: colors.primary,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xxs,
   },
   title: {
-    ...typography.h1,
+    ...typography.h2,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginTop: spacing.xs,
   },
   phoneText: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
   },
-  form: {
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     gap: spacing.md,
+    marginBottom: spacing.md,
+    ...shadows.sm,
   },
-  sectionLabel: {
-    ...typography.h3,
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardTitle: {
+    ...typography.h4,
     color: colors.textPrimary,
-    marginTop: spacing.sm,
+  },
+  cardHint: {
+    ...typography.caption,
+    color: colors.textTertiary,
+    fontWeight: '600',
+  },
+  field: {
+    gap: 0,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  halfField: {
+    flex: 1,
   },
   errorText: {
     ...typography.bodySmall,
     color: colors.error,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
 });

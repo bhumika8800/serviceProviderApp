@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '../store/useAuthStore';
 import {
   getMe,
   updateProfile,
@@ -11,10 +12,12 @@ import {
 } from '../services/userService';
 
 export function useUserProfile() {
+  const token = useAuthStore((state) => state.token);
   return useQuery({
     queryKey: ['me'],
     queryFn: () => getMe(),
     staleTime: 5 * 60 * 1000,
+    enabled: !!token,
   });
 }
 

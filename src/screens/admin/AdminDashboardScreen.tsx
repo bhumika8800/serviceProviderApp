@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
+import { Icon } from '../../components/common/Icon';
+import type { IconName } from '../../components/common/Icon';
 import { Loader } from '../../components/common/Loader';
 import { useAdminStats } from '../../hooks/useAdmin';
 import { formatCurrency } from '../../utils/formatters';
@@ -20,28 +22,61 @@ export function AdminDashboardScreen() {
 
   const bookings = stats?.bookingsByStatus ?? {};
   const bookingEntries = Object.entries(bookings);
+  const totalBookings = bookingEntries.reduce((sum, [, count]) => sum + count, 0) || 1;
 
   if (isLoading && !stats) {
     return <Loader fullScreen message="Loading dashboard…" />;
   }
 
-  const summaryCards = [
-    { label: 'Total Users', value: stats?.totalUsers ?? 0, icon: '👥', color: colors.primaryBg },
-    { label: 'Active Users', value: stats?.activeUsers ?? 0, icon: '🟢', color: colors.successBg },
-    { label: 'Services', value: stats?.totalServices ?? 0, icon: '🛠️', color: colors.accentBg },
+  const summaryCards: {
+    label: string;
+    value: string | number;
+    icon: IconName;
+    color: string;
+    iconColor: string;
+  }[] = [
+    {
+      label: 'Total Users',
+      value: stats?.totalUsers ?? 0,
+      icon: 'user',
+      color: colors.primaryBg,
+      iconColor: colors.primary,
+    },
+    {
+      label: 'Active Users',
+      value: stats?.activeUsers ?? 0,
+      icon: 'check',
+      color: colors.successBg,
+      iconColor: colors.success,
+    },
+    {
+      label: 'Services',
+      value: stats?.totalServices ?? 0,
+      icon: 'grid',
+      color: colors.accentBg,
+      iconColor: colors.accentDark,
+    },
     {
       label: 'Revenue',
       value: formatCurrency(stats?.totalRevenue ?? 0),
-      icon: '💰',
+      icon: 'card',
       color: colors.primaryBg,
+      iconColor: colors.primary,
     },
     {
       label: 'Open Complaints',
       value: stats?.openComplaints ?? 0,
-      icon: '⚠️',
+      icon: 'alert',
       color: colors.errorBg,
+      iconColor: colors.error,
     },
-    { label: 'Open Queries', value: stats?.openQueries ?? 0, icon: '💬', color: colors.accentBg },
+    {
+      label: 'Open Queries',
+      value: stats?.openQueries ?? 0,
+      icon: 'message',
+      color: colors.accentBg,
+      iconColor: colors.accentDark,
+    },
   ];
 
   return (
@@ -59,7 +94,9 @@ export function AdminDashboardScreen() {
         <View style={styles.grid}>
           {summaryCards.map((card) => (
             <View key={card.label} style={[styles.card, { backgroundColor: card.color }]}>
-              <Text style={styles.cardIcon}>{card.icon}</Text>
+              <View style={styles.cardIconWrap}>
+                <Icon name={card.icon} size={20} color={card.iconColor} />
+              </View>
               <Text style={styles.cardValue}>{card.value}</Text>
               <Text style={styles.cardLabel}>{card.label}</Text>
             </View>
@@ -78,7 +115,7 @@ export function AdminDashboardScreen() {
                       style={[
                         styles.statusBarFill,
                         {
-                          width: `${Math.min((count / (stats?.totalUsers || 1)) * 100, 100)}%`,
+                          width: `${Math.min((count / totalBookings) * 100, 100)}%`,
                         },
                       ]}
                     />
@@ -133,8 +170,13 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     ...shadows.sm,
   },
-  cardIcon: {
-    fontSize: 20,
+  cardIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardValue: {
     ...typography.h2,

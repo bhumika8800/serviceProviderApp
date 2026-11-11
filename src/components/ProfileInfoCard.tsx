@@ -1,6 +1,7 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, typography, shadows } from '../utils/constants';
 import { Button } from './common/Button';
+import { Icon } from './common/Icon';
 import { getInitials, capitalize } from '../utils/formatters';
 import type { Address, User } from '../types';
 
@@ -35,7 +36,7 @@ export function ProfileInfoCard({
             </View>
           )}
           <View style={styles.cameraBadge}>
-            <Text style={styles.cameraIcon}>📷</Text>
+            <Icon name="camera" size={12} color={colors.textWhite} strokeWidth={2} />
           </View>
         </TouchableOpacity>
         <View style={styles.profileInfo}>
@@ -43,14 +44,21 @@ export function ProfileInfoCard({
             {fullName}
           </Text>
           <Text style={styles.phone}>{user.phone}</Text>
+          {user.email ? (
+            <Text style={styles.email} numberOfLines={1}>
+              {user.email}
+            </Text>
+          ) : null}
         </View>
       </View>
 
       <TouchableOpacity style={styles.addressRow} onPress={onManageAddresses} activeOpacity={0.7}>
-        <Text style={styles.addressIcon}>📍</Text>
+        <View style={styles.addressIcon}>
+          <Icon name="pin" size={18} color={colors.primary} />
+        </View>
         <View style={styles.addressContent}>
           <Text style={styles.addressLabel}>
-            {defaultAddress ? `${capitalize(defaultAddress.label)} Address` : 'Address'}
+            {defaultAddress ? `${capitalize(defaultAddress.label)} address` : 'Service address'}
           </Text>
           <Text style={styles.addressLine} numberOfLines={2}>
             {defaultAddress
@@ -58,15 +66,15 @@ export function ProfileInfoCard({
               : 'No address saved yet. Tap to add one.'}
           </Text>
         </View>
-        <Text style={styles.chevron}>›</Text>
+        <Icon name="chevron-right" size={16} color={colors.textTertiary} strokeWidth={2.2} />
       </TouchableOpacity>
 
       <View style={styles.actions}>
         <View style={styles.actionButton}>
-          <Button title="Edit Profile" onPress={onEditProfile} variant="outline" />
+          <Button title="Edit profile" onPress={onEditProfile} variant="outline" />
         </View>
         <View style={styles.actionButton}>
-          <Button title="Manage Addresses" onPress={onManageAddresses} variant="ghost" />
+          <Button title="Addresses" onPress={onManageAddresses} variant="ghost" />
         </View>
       </View>
     </View>
@@ -76,9 +84,11 @@ export function ProfileInfoCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     marginHorizontal: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...shadows.md,
   },
   profileRow: {
@@ -89,14 +99,16 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   avatar: {
-    width: 72,
-    height: 72,
+    width: 76,
+    height: 76,
     borderRadius: borderRadius.full,
   },
   avatarPlaceholder: {
     backgroundColor: colors.primaryBg,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   avatarInitials: {
     ...typography.h2,
@@ -115,9 +127,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.surface,
   },
-  cameraIcon: {
-    fontSize: 11,
-  },
   profileInfo: {
     flex: 1,
   },
@@ -126,21 +135,31 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   phone: {
-    ...typography.body,
+    ...typography.bodySmall,
     color: colors.textSecondary,
-    marginTop: spacing.xxs,
+    marginTop: 2,
+  },
+  email: {
+    ...typography.caption,
+    color: colors.textTertiary,
+    marginTop: 2,
   },
   addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.md,
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: borderRadius.lg,
     padding: spacing.sm,
     marginTop: spacing.md,
   },
   addressIcon: {
-    fontSize: 18,
-    marginRight: spacing.sm,
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   addressContent: {
     flex: 1,
@@ -148,7 +167,7 @@ const styles = StyleSheet.create({
   addressLabel: {
     ...typography.caption,
     color: colors.textTertiary,
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -156,11 +175,6 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.textPrimary,
     marginTop: 2,
-  },
-  chevron: {
-    ...typography.h3,
-    color: colors.textTertiary,
-    marginLeft: spacing.sm,
   },
   actions: {
     flexDirection: 'row',

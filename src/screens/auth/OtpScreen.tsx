@@ -5,14 +5,16 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '../../utils/constants';
-import { Input } from '../../components/common/Input';
+import { colors, spacing, borderRadius, typography, shadows } from '../../utils/constants';
 import { Button } from '../../components/common/Button';
+import { Icon } from '../../components/common/Icon';
 import { verifyOtp, sendOtp, clearConfirmationResult } from '../../services/authService';
 import { useAuthStore } from '../../store/useAuthStore';
 import apiClient from '../../services/apiClient';
@@ -23,6 +25,7 @@ type OtpRouteProp = RouteProp<RootStackParamList, 'Otp'>;
 type OtpNavProp = NativeStackNavigationProp<RootStackParamList, 'Otp'>;
 
 const RESEND_COOLDOWN = 30;
+const OTP_LENGTH = 6;
 
 export function OtpScreen() {
   const route = useRoute<OtpRouteProp>();
@@ -48,7 +51,7 @@ export function OtpScreen() {
   }, [resendCooldown]);
 
   const handleOtpChange = (text: string) => {
-    setOtp(text.replace(/[^0-9]/g, '').slice(0, 6));
+    setOtp(text.replace(/[^0-9]/g, '').slice(0, OTP_LENGTH));
     if (error) {
       setError('');
     }
@@ -60,7 +63,7 @@ export function OtpScreen() {
     }
     setError('');
 
-    if (otp.length < 6) {
+    if (otp.length < OTP_LENGTH) {
       setError('Please enter the complete 6-digit OTP.');
       return;
     }
@@ -106,67 +109,94 @@ export function OtpScreen() {
   };
 
   const canResend = resendCooldown === 0 && !isResending && !isVerifying;
+  const activeIndex = Math.min(otp.length, OTP_LENGTH - 1);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Verify OTP</Text>
+          <View style={styles.iconBadge}>
+            <Icon name="message" size={26} color={colors.primary} />
+          </View>
+          <Text style={styles.title}>Enter verification code</Text>
           <Text style={styles.subtitle}>
-            Enter the 6-digit code sent to{'\n'}
+            We sent a 6-digit code to{'\n'}
             <Text style={styles.phoneText}>{formatPhone(phoneNumber)}</Text>
           </Text>
         </View>
 
-        <View style={styles.form}>
-          <Input
-            value={otp}
-            onChangeText={handleOtpChange}
-            placeholder="Enter OTP"
-            keyboardType="number-pad"
-            maxLength={6}
-            error={error}
-            autoFocus
-            autoComplete="sms-otp"
-            textContentType="oneTimeCode"
-            returnKeyType="done"
-            onSubmitEditing={handleVerifyOtp}
-            editable={!isVerifying}
-          />
+        <View style={styles.card}>
+          <View style={styles.otpWrapper}>
+            <View style={styles.otpRow}>
+              {Array.from({ length: OTP_LENGTH }).map((_, index) => {
+                const filled = index < otp.length;
+                const isActive = index === activeIndex && !error;
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.otpBox,
+                      filled && styles.otpBoxFilled,
+                      isActive && styles.otpBoxActive,
+                      error ? styles.otpBoxError : null,
+                    ]}
+                  >
+                    <Text style={styles.otpDigit}>{otp[index] ?? ''}</Text>
+                  </View>
+                );
+              })}
+            </View>
+            <TextInput
+              style={styles.hiddenInput}
+              value={otp}
+              onChangeText={handleOtpChange}
+              keyboardType="number-pad"
+              maxLength={OTP_LENGTH}
+              autoFocus
+              autoComplete="sms-otp"
+              textContentType="oneTimeCode"
+              returnKeyType="done"
+              onSubmitEditing={handleVerifyOtp}
+              editable={!isVerifying}
+              caretHidden
+            />
+          </View>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <Button
-            title="Verify OTP"
+            title="Verify & Continue"
             onPress={handleVerifyOtp}
             loading={isVerifying}
-            disabled={otp.length < 6}
+            disabled={otp.length < OTP_LENGTH}
           />
         </View>
 
         <View style={styles.resendSection}>
-          <Text style={styles.resendText}>Didn't receive the code? </Text>
+          <Text style={styles.resendText}>Didn't receive the code?</Text>
           {canResend ? (
-            <Button
-              title="Resend OTP"
-              onPress={handleResendOtp}
-              variant="ghost"
-              loading={isResending}
-            />
+            <TouchableOpacity onPress={handleResendOtp} activeOpacity={0.7}>
+              <Text style={styles.resendLink}>
+                {isResending ? 'Sending…' : 'Resend code'}
+              </Text>
+            </TouchableOpacity>
           ) : (
-            <Text style={styles.cooldownText}>
-              Resend in {resendCooldown}s
-            </Text>
+            <Text style={styles.cooldownText}>Resend in {resendCooldown}s</Text>
           )}
         </View>
 
-        <Button
-          title="Change phone number"
+        <TouchableOpacity
+          style={styles.changeNumber}
           onPress={() => navigation.goBack()}
-          variant="ghost"
           disabled={isVerifying}
-        />
+          activeOpacity={0.7}
+        >
+          <Icon name="chevron-left" size={15} color={colors.textSecondary} strokeWidth={2.2} />
+          <Text style={styles.changeNumberText}>Change phone number</Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -184,38 +214,117 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xxxl,
+    marginBottom: spacing.xl,
+  },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
   },
   title: {
-    ...typography.h1,
+    ...typography.h2,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginTop: spacing.xs,
   },
   phoneText: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
   },
-  form: {
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     gap: spacing.lg,
+    ...shadows.md,
+  },
+  otpWrapper: {
+    position: 'relative',
+  },
+  otpRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.xs,
+  },
+  otpBox: {
+    flex: 1,
+    height: 56,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  otpBoxFilled: {
+    backgroundColor: colors.primaryBg,
+    borderColor: colors.primaryBg,
+  },
+  otpBoxActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+  },
+  otpBoxError: {
+    borderColor: colors.error,
+    backgroundColor: colors.errorBg,
+  },
+  otpDigit: {
+    ...typography.h2,
+    color: colors.textPrimary,
+  },
+  hiddenInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0,
+  },
+  errorText: {
+    ...typography.bodySmall,
+    color: colors.error,
+    textAlign: 'center',
+    marginTop: -spacing.xs,
   },
   resendSection: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.xxl,
-    flexWrap: 'wrap',
+    gap: spacing.xxs,
+    marginTop: spacing.xl,
   },
   resendText: {
     ...typography.body,
     color: colors.textSecondary,
   },
+  resendLink: {
+    ...typography.body,
+    color: colors.primary,
+    fontWeight: '700',
+  },
   cooldownText: {
     ...typography.body,
     color: colors.textTertiary,
+  },
+  changeNumber: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    marginTop: spacing.lg,
+  },
+  changeNumberText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    fontWeight: '600',
   },
 });

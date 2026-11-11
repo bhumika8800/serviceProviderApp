@@ -41,7 +41,7 @@ export function Button({
       ]}
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
       {loading ? (
         <ActivityIndicator color={isLoadingColor} size="small" />
@@ -65,7 +65,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    height: 48,
+    height: 52,
     borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     ...shadows.md,
   },
   outline: {
-    backgroundColor: 'transparent',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: colors.primary,
   },
@@ -84,13 +84,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   danger: {
-    backgroundColor: 'transparent',
+    backgroundColor: colors.errorBg,
     borderWidth: 1.5,
     borderColor: colors.error,
   },
   disabled: {
-    backgroundColor: colors.border,
-    ...shadows.sm,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   text: {
     ...typography.button,

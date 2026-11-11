@@ -24,7 +24,8 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error: AxiosError<{ message?: string; code?: string }>) => {
-    if (error.response?.status === 401) {
+    const sentAuthHeader = Boolean(error.config?.headers?.Authorization);
+    if (error.response?.status === 401 && sentAuthHeader) {
       useAuthStore.getState().logout();
     }
 
